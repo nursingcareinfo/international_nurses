@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+.omo/
+.playwright-mcp/
+*.jpg
+extraction-result.png
+live-site-check.png
+live-site-verified.png
