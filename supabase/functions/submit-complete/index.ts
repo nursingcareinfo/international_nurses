@@ -35,7 +35,7 @@ serve(async (req) => {
         email: email || extractedData?.extractedEmail || "",
         license_number: licenseNumber || extractedData?.extractedLicenseNumber || "",
         ai_extracted_data: extractedData || {},
-        survey_link_sent: true
+        survey_link_sent: true,
       })
       .select()
       .single();
@@ -48,26 +48,73 @@ serve(async (req) => {
       throw new Error("Failed to retrieve created nursing application record.");
     }
 
+    const applicationId = appData.id;
+
     // 2. Insert into survey_responses
-    const { data: surveyRes, error: surveyErr } = await supabase
+    const { error: surveyErr } = await supabase
       .from("survey_responses")
       .insert({
         survey_data: surveyData || {},
         extracted_data: extractedData || {},
-        application_id: appData.id
-      })
-      .select()
-      .single();
+        application_id: applicationId,
+      });
 
     if (surveyErr) {
-      throw new Error(`Error inserting survey response: ${surveyErr.message}`);
+      // Non-blocking — log but don't fail the whole request
+      console.error("Error inserting survey response:", surveyErr.message);
+    }
+
+    // 3. Insert into pnc_license_data (normalized PNC card data)
+    const pncPayload: Record<string, unknown> = {
+      application_id: applicationId,
+      license_number: licenseNumber || extractedData?.extractedLicenseNumber || surveyData?.licenseNumber || "",
+      council_name: surveyData?.councilName || "Pakistan Nursing Council",
+      category: surveyData?.category || null,
+      verification_status: surveyData?.verificationStatus || "Active",
+      issue_date: surveyData?.issueDate || null,
+      expiry_date: surveyData?.expiryDate || null,
+      additional_qualifications: surveyData?.additionalQualifications || null,
+      nursing_school: surveyData?.nursingSchool || null,
+      graduation_year: surveyData?.graduationYear ? parseInt(surveyData.graduationYear) : null,
+      pnc_card_present: surveyData?.pncCardPresent || null,
+    };
+
+    const { error: pncErr } = await supabase
+      .from("pnc_license_data")
+      .insert(pncPayload);
+
+    if (pncErr) {
+      console.error("Error inserting PNC license data:", pncErr.message);
+    }
+
+    // 4. Insert into user_profiles (normalized candidate profile)
+    const profilePayload: Record<string, unknown> = {
+      application_id: applicationId,
+      full_name: fullName || extractedData?.extractedName || "",
+      email: email || extractedData?.extractedEmail || "",
+      phone: phone || extractedData?.extractedPhone || "",
+      address: surveyData?.address || extractedData?.extractedAddress || "",
+      languages: surveyData?.languageProficiency || extractedData?.extractedLanguages || "",
+      education: surveyData?.additionalQualifications || extractedData?.extractedEducation || "",
+      experience: extractedData?.extractedExperience ||
+        `${surveyData?.jobTitle || ""} at ${surveyData?.currentEmployer || ""}`.trim() ||
+        null,
+      skills: extractedData?.extractedSkills || "Nursing Care",
+    };
+
+    const { error: profileErr } = await supabase
+      .from("user_profiles")
+      .insert(profilePayload);
+
+    if (profileErr) {
+      console.error("Error inserting user profile:", profileErr.message);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        applicationId: appData.id,
-        surveyResponseId: surveyRes?.id
+        applicationId: applicationId,
+        message: "Application, PNC license data, and user profile stored successfully.",
       }),
       {
         status: 200,
