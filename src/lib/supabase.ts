@@ -8,14 +8,20 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishabl
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export async function callEdgeFunction(name: string, body: any) {
-  // Always use local Express server for AI extraction and OCR endpoints to ensure
-  // they utilize the container's real GEMINI_API_KEY and avoid secret-sharing issues with Supabase.
+  // Always use local Express server for AI extraction and OCR endpoints in the dev environment
+  // to ensure they utilize the container's real GEMINI_API_KEY and avoid secret-sharing issues with Supabase.
   const isAiEndpoint = name === "extract-info" || name === "ocr-pnc";
+  const isLocalContainer = 
+    window.location.hostname.includes("run.app") || 
+    window.location.hostname.includes("localhost") || 
+    window.location.hostname.includes("127.0.0.1");
 
-  // If we have real credentials and this is not an AI endpoint, try calling the Supabase Edge Function
+  const preferLocal = isAiEndpoint && isLocalContainer;
+
+  // If we have real credentials and this is not a local AI endpoint request, try calling the Supabase Edge Function
   // @ts-ignore
   const hasRealCredentials = 
-    !isAiEndpoint &&
+    !preferLocal &&
     // @ts-ignore
     import.meta.env.VITE_SUPABASE_URL && 
     // @ts-ignore
