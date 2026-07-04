@@ -1,0 +1,159 @@
+{
+  "entities": {
+    "Application": {
+      "title": "Nursing Application",
+      "description": "Represents a nurse's initial registration and profile details.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the application (could match user ID if authenticated)."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The nurse's full legal name as it appears on official credentials."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address for recruiter contact."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The active phone or mobile number."
+        },
+        "licenseNumber": {
+          "type": "string",
+          "description": "Pakistan Nursing Council (PNC) registration/license number."
+        },
+        "extractedData": {
+          "type": "object",
+          "description": "Raw AI extracted resume data from CV and license scans."
+        },
+        "surveyData": {
+          "type": "object",
+          "description": "Full placement preference survey response."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp indicating when the application was submitted."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Optional authenticated user ID associated with this submission."
+        }
+      },
+      "required": ["fullName", "email", "phone", "licenseNumber", "createdAt"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Parsed and structured CV information for matching.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "applicationId": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "languages": {
+          "type": "string"
+        },
+        "education": {
+          "type": "string"
+        },
+        "experience": {
+          "type": "string"
+        },
+        "skills": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["applicationId", "fullName", "createdAt"]
+    },
+    "PncLicenseData": {
+      "title": "PNC License Data",
+      "description": "Extracted details from Pakistan Nursing Council card.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "applicationId": {
+          "type": "string"
+        },
+        "licenseNumber": {
+          "type": "string"
+        },
+        "councilName": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "verificationStatus": {
+          "type": "string"
+        },
+        "issueDate": {
+          "type": "string"
+        },
+        "expiryDate": {
+          "type": "string"
+        },
+        "additionalQualifications": {
+          "type": "string"
+        },
+        "nursingSchool": {
+          "type": "string"
+        },
+        "graduationYear": {
+          "type": "integer"
+        },
+        "pncCardPresent": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["applicationId", "licenseNumber", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/applications/{applicationId}": {
+      "schema": {
+        "$ref": "#/entities/Application"
+      },
+      "description": "Contains candidate nursing registration records."
+    },
+    "/user_profiles/{profileId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Normalized candidate profiles parsed from resume credentials."
+    },
+    "/pnc_license_data/{licenseId}": {
+      "schema": {
+        "$ref": "#/entities/PncLicenseData"
+      },
+      "description": "Specialized verification record for Pakistan Nursing Council physical cards."
+    }
+  }
+}

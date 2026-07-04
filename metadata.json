@@ -1,0 +1,6 @@
+{
+  "name": "Nursing Recruitment Portal",
+  "description": "A recruitment portal for Pakistani nurses applying for international positions, with CV and PNC license extraction and a comprehensive survey.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

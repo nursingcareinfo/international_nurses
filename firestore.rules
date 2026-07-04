@@ -1,0 +1,160 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==========================================
+    // 0. GLOBAL SAFETY NET
+    // ==========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ==========================================
+    // GLOBAL HELPERS
+    // ==========================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email == "nursingcareinfo21@gmail.com" && 
+             request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // ==========================================
+    // VALIDATION BLUEPRINTS
+    // ==========================================
+    function isValidApplication(data) {
+      return data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 150 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+             data.phone is string && data.phone.size() > 0 && data.phone.size() <= 50 &&
+             data.licenseNumber is string && data.licenseNumber.size() > 0 && data.licenseNumber.size() <= 50 &&
+             (!('userId' in data) || (data.userId is string && data.userId.size() <= 128)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 50));
+    }
+
+    function isValidUserProfile(data) {
+      return data.applicationId is string && data.applicationId.size() <= 128 &&
+             data.fullName is string && data.fullName.size() > 0 && data.fullName.size() <= 150 &&
+             (!('email' in data) || (data.email is string && data.email.size() <= 150)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() <= 50)) &&
+             (!('education' in data) || (data.education is string && data.education.size() <= 2000)) &&
+             (!('experience' in data) || (data.experience is string && data.experience.size() <= 2000)) &&
+             (!('skills' in data) || (data.skills is string && data.skills.size() <= 2000));
+    }
+
+    function isValidPncLicenseData(data) {
+      return data.applicationId is string && data.applicationId.size() <= 128 &&
+             data.licenseNumber is string && data.licenseNumber.size() > 0 && data.licenseNumber.size() <= 100 &&
+             (!('councilName' in data) || (data.councilName is string && data.councilName.size() <= 100)) &&
+             (!('category' in data) || (data.category is string && data.category.size() <= 100)) &&
+             (!('verificationStatus' in data) || (data.verificationStatus is string && data.verificationStatus.size() <= 50)) &&
+             (!('graduationYear' in data) || (data.graduationYear is int && data.graduationYear >= 1950 && data.graduationYear <= 2100));
+    }
+
+    // ==========================================
+    // 1. APPLICATIONS COLLECTION
+    // ==========================================
+    match /applications/{applicationId} {
+      allow get: if isAdmin() || (resource != null && 'userId' in resource.data && isOwner(resource.data.userId));
+      
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      
+      allow create: if isValidId(applicationId) && 
+                    isValidApplication(incoming()) && 
+                    (!('userId' in incoming()) || isOwner(incoming().userId));
+                    
+      allow update: if isValidId(applicationId) && 
+                    isValidApplication(incoming()) && (
+                      isAdmin() || (
+                        isOwner(existing().userId) &&
+                        incoming().userId == existing().userId &&
+                        incoming().createdAt == existing().createdAt
+                      )
+                    );
+                    
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 2. USER PROFILES COLLECTION (Normalized profiles)
+    // ==========================================
+    match /user_profiles/{profileId} {
+      allow get: if isAdmin() || (resource != null && exists(/databases/$(database)/documents/applications/$(resource.data.applicationId)) && 
+                     get(/databases/$(database)/documents/applications/$(resource.data.applicationId)).data.userId == request.auth.uid);
+                     
+      allow list: if isAdmin();
+      
+      allow create: if isValidId(profileId) && 
+                    isValidUserProfile(incoming()) && 
+                    exists(/databases/$(database)/documents/applications/$(incoming().applicationId)) && (
+                      isAdmin() || (
+                        let app = get(/databases/$(database)/documents/applications/$(incoming().applicationId));
+                        !('userId' in app.data) || isOwner(app.data.userId)
+                      )
+                    );
+                    
+      allow update: if isValidId(profileId) && 
+                    isValidUserProfile(incoming()) && (
+                      isAdmin() || (
+                        incoming().applicationId == existing().applicationId &&
+                        exists(/databases/$(database)/documents/applications/$(existing().applicationId)) && (
+                          let app = get(/databases/$(database)/documents/applications/$(existing().applicationId));
+                          isOwner(app.data.userId)
+                        )
+                      )
+                    );
+                    
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 3. PNC LICENSE DATA COLLECTION
+    // ==========================================
+    match /pnc_license_data/{licenseId} {
+      allow get: if isAdmin() || (resource != null && exists(/databases/$(database)/documents/applications/$(resource.data.applicationId)) && 
+                     get(/databases/$(database)/documents/applications/$(resource.data.applicationId)).data.userId == request.auth.uid);
+                     
+      allow list: if isAdmin();
+      
+      allow create: if isValidId(licenseId) && 
+                    isValidPncLicenseData(incoming()) && 
+                    exists(/databases/$(database)/documents/applications/$(incoming().applicationId)) && (
+                      isAdmin() || (
+                        let app = get(/databases/$(database)/documents/applications/$(incoming().applicationId));
+                        !('userId' in app.data) || isOwner(app.data.userId)
+                      )
+                    );
+                    
+      allow update: if isValidId(licenseId) && 
+                    isValidPncLicenseData(incoming()) && (
+                      isAdmin() || (
+                        incoming().applicationId == existing().applicationId &&
+                        exists(/databases/$(database)/documents/applications/$(existing().applicationId)) && (
+                          let app = get(/databases/$(database)/documents/applications/$(existing().applicationId));
+                          isOwner(app.data.userId)
+                        )
+                      )
+                    );
+                    
+      allow delete: if isAdmin();
+    }
+  }
+}
