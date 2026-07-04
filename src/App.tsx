@@ -20,10 +20,14 @@ function LandingPage() {
 
 
 export default function App() {
-  // Dynamically determine basename so it works in both AI Studio dev container (/)
-  // and GitHub Pages production deploy (/jobs_for_nurses/)
-  const basename = window.location.pathname.includes("/jobs_for_nurses") 
-    ? "/jobs_for_nurses" 
+  // Dynamically determine basename so it works across all deployments:
+  // - AI Studio dev container: /
+  // - Express server production: /jobs_for_nurses
+  // - GitHub Pages: /international_nurses
+  const basename = window.location.pathname.includes("/jobs_for_nurses")
+    ? "/jobs_for_nurses"
+    : window.location.pathname.includes("/international_nurses")
+    ? "/international_nurses"
     : "/";
 
   return (
