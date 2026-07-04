@@ -1,48 +1,414 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenAI } from "https://esm.sh/@google/genai@2.4.0";
-import mammoth from "https://esm.sh/mammoth@1.12.0";
+import mammoth from "npm:mammoth@1.6.0";
+
+const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const FETCH_TIMEOUT_MS = 20_000;
+const MAX_RETRIES = 2;
 
 const corsHeaders = {
+  "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, apikey, Authorization",
 };
 
-// Helper: Robust JSON extraction from LLM response strings
-function extractJson(text: string): any {
-  const cleaned = text.trim();
-  
-  // Try direct parsing
-  try {
-    return JSON.parse(cleaned);
-  } catch (_) {}
+function extractViaRegex(text: string): Record<string, string> {
+  const data: Record<string, string> = {};
 
-  // Match markdown code block
-  const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/i;
-  const match = cleaned.match(codeBlockRegex);
-  if (match && match[1]) {
-    try {
-      return JSON.parse(match[1].trim());
-    } catch (_) {}
+  const nameMatch = text.match(/(?:Name|name|Candidate|Nurse|Dr\.)\s*:\s*([A-Za-z .'-]+)/);
+  if (nameMatch) data.extractedName = nameMatch[1].trim();
+  else {
+    const drMatch = text.match(/(Dr\.\s*[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
+    if (drMatch) data.extractedName = drMatch[1].trim();
   }
 
-  // Match first '{' to last '}'
-  const startIdx = cleaned.indexOf("{");
-  const endIdx = cleaned.lastIndexOf("}");
-  if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-    const jsonStr = cleaned.substring(startIdx, endIdx + 1);
-    try {
-      return JSON.parse(jsonStr);
-    } catch (_) {}
+  const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+  if (emailMatch) data.extractedEmail = emailMatch[1].trim();
+
+  const phoneMatch = text.match(/(?:\+92|0|92)?[\s-]?3\d{2}[\s-]?\d{7}/);
+  if (phoneMatch) {
+    let phone = phoneMatch[0].replace(/\s+/g, "").replace(/-/g, "");
+    if (phone.startsWith("0")) phone = "+92" + phone.substring(1);
+    else if (phone.startsWith("92") && !phone.startsWith("+92")) phone = "+" + phone;
+    else if (!phone.startsWith("+")) phone = "+92" + phone;
+    if (phone.startsWith("+92") && phone.length >= 12) {
+      data.extractedPhone = "+92 " + phone.substring(3, 6) + " " + phone.substring(6);
+    } else {
+      data.extractedPhone = phone;
+    }
+  } else {
+    const anyPhone = text.match(/(\+\d{1,3}[\s-]?\d{8,12})/);
+    if (anyPhone) data.extractedPhone = anyPhone[1].trim();
   }
 
-  throw new Error("Could not parse valid JSON from Gemini response.");
+  const pncMatch = text.match(/(?:PNC|Pnc|pnc)[:\s-]*(\d{4,10})/);
+  if (pncMatch) data.extractedLicenseNumber = "PNC-" + pncMatch[1];
+  else {
+    const licMatch = text.match(/(?:License|Licence|license|licence)\s*:\s*([A-Za-z0-9-]+)/i);
+    if (licMatch) data.extractedLicenseNumber = licMatch[1].trim();
+  }
+
+  const addrMatch = text.match(/(?:Address|address)\s*:\s*(.+)/);
+  if (addrMatch) data.extractedAddress = addrMatch[1].trim();
+
+  const langMatch = text.match(/(?:Languages|languages)\s*:\s*(.+)/);
+  if (langMatch) data.extractedLanguages = langMatch[1].trim();
+
+  const eduMatch = text.match(/(?:Education|Qualification|qualification|education)\s*:\s*(.+)/);
+  if (eduMatch) data.extractedEducation = eduMatch[1].trim();
+
+  const expMatch = text.match(/(?:Experience|experience)\s*:\s*(.+)/);
+  if (expMatch) data.extractedExperience = expMatch[1].trim();
+
+  const skillsMatch = text.match(/(?:Skills|skills)\s*:\s*(.+)/);
+  if (skillsMatch) data.extractedSkills = skillsMatch[1].trim();
+
+  const certMatch = text.match(/(?:Certifications|certifications)\s*:\s*(.+)/);
+  if (certMatch) data.extractedCertifications = certMatch[1].trim();
+
+  return data;
 }
 
-serve(async (req) => {
-  // Handle CORS
+async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const uint8 = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < uint8.length; i++) {
+    binary += String.fromCharCode(uint8[i]);
+  }
+  return btoa(binary);
+}
+
+function getMimeType(fileName: string): string {
+  const name = fileName.toLowerCase();
+  if (name.endsWith(".pdf")) return "application/pdf";
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  if (name.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (name.endsWith(".doc")) return "application/msword";
+  return "application/octet-stream";
+}
+
+function isTextFile(fileName: string): boolean {
+  const name = fileName.toLowerCase();
+  return name.endsWith(".txt") || name.endsWith(".csv") || name.endsWith(".json") || name.endsWith(".md");
+}
+
+const GEMINI_INSTRUCTION = `You are a precise OCR extraction engine for nursing CV/resume and PNC license documents from Pakistan.
+
+Extract the following fields from the document. Look for them even if they appear in different formats, tables, or layouts. Be thorough — scan the entire document.
+
+Required fields (output JSON keys):
+- name: Full name of the candidate (e.g. "Fatima Akhtar")
+- email: Email address
+- phone: Phone number with country code (Pakistan: +92...)
+- pnc_license_number: PNC license number (e.g. "PNC-12345" or just "12345")
+- address: Full residential address
+- languages: Languages spoken (comma separated)
+- education: Educational qualifications (e.g. "BSN, Post-RN")
+- experience: Professional experience summary
+- skills: Clinical/technical skills (comma separated)
+- certifications: Professional certifications (e.g. "ACLS, BLS, PALS")
+
+Rules:
+- If a field is not found anywhere in the document, omit it from the JSON.
+- Extract the EXACT text — do not paraphrase.
+- For phone numbers, use international format.
+- For PNC license, look for "PNC" followed by numbers, or just a 4-10 digit number near "License" or "Licence".
+- Return ONLY valid JSON with no markdown formatting, no code blocks, no extra text.`;
+
+const POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions";
+
+async function extractDocxText(file: File): Promise<{ text: string; debug: Record<string, unknown> }> {
+  const debug: Record<string, unknown> = {};
+  try {
+    const buffer = await file.arrayBuffer();
+    debug.bufferSize = buffer.byteLength;
+    debug.fileSize = file.size;
+    debug.fileName = file.name;
+
+    // Try mammoth
+    try {
+      const result = await mammoth.extractRawText({ buffer });
+      debug.mammothChars = result.value?.length ?? 0;
+      debug.mammothMessages = result.messages;
+      debug.textPreview = (result.value || "").slice(0, 200);
+      if (result.value) return { text: result.value, debug };
+    } catch (e: any) {
+      debug.mammothError = e.message;
+    }
+
+    // Fallback: manual ZIP parse
+    try {
+      const view = new Uint8Array(buffer);
+      const decoder = new TextDecoder();
+      let offset = 0;
+      const entries: string[] = [];
+
+      while (offset < view.length - 30) {
+        if (view[offset] !== 0x50 || view[offset + 1] !== 0x4b ||
+            view[offset + 2] !== 0x03 || view[offset + 3] !== 0x04) {
+          offset++;
+          continue;
+        }
+
+        const nameLen = view[offset + 26] | (view[offset + 27] << 8);
+        const extraLen = view[offset + 28] | (view[offset + 29] << 8);
+        const compMethod = view[offset + 8] | (view[offset + 9] << 8);
+        const compSize = view[offset + 18] | (view[offset + 19] << 8) |
+                        (view[offset + 20] << 16) | (view[offset + 21] << 24);
+        const fileName = decoder.decode(view.slice(offset + 30, offset + 30 + nameLen));
+
+        entries.push(`${fileName}(m=${compMethod},cs=${compSize})`);
+
+        if (fileName === "word/document.xml") {
+          const dataStart = offset + 30 + nameLen + extraLen;
+
+          const xmlBytes = view.slice(dataStart, dataStart + compSize);
+
+          if (compMethod === 0) {
+            const docXml = decoder.decode(xmlBytes);
+            const texts = docXml.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+            if (texts) {
+              const text = texts.map((t: string) => t.replace(/<\/?w:t[^>]*>/g, "")).join(" ").replace(/\s+/g, " ").trim();
+              debug.method = "zip-stored";
+              debug.textPreview = text.slice(0, 200);
+              return { text, debug };
+            }
+          }
+
+          if (compMethod === 8) {
+            try {
+              const ds = new DecompressionStream("deflate-raw");
+              const writer = ds.writable.getWriter();
+              writer.write(xmlBytes);
+              writer.close();
+              const reader = ds.readable.getReader();
+              const chunks: Uint8Array[] = [];
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                chunks.push(value);
+              }
+              const totalLen = chunks.reduce((s, c) => s + c.byteLength, 0);
+              const combined = new Uint8Array(totalLen);
+              let pos = 0;
+              for (const c of chunks) { combined.set(c, pos); pos += c.byteLength; }
+              const docXml = decoder.decode(combined);
+              const texts = docXml.match(/<w:t[^>]*>([^<]*)<\/w:t>/g);
+              if (texts) {
+                const text = texts.map((t: string) => t.replace(/<\/?w:t[^>]*>/g, "")).join(" ").replace(/\s+/g, " ").trim();
+                debug.method = "zip-deflate";
+                debug.decompressedLen = combined.length;
+                debug.textPreview = text.slice(0, 200);
+                return { text, debug };
+              }
+            } catch (e: any) {
+              debug.deflateError = e.message;
+            }
+          }
+        }
+
+        offset += 30 + nameLen + extraLen + compSize;
+      }
+
+      debug.entries = entries;
+    } catch (e: any) {
+      debug.zipError = e.message;
+    }
+
+    return { text: "", debug };
+  } catch (err: any) {
+    debug.topError = err.message;
+    return { text: "", debug };
+  }
+}
+
+async function callAiWithText(text: string, debug?: Record<string, unknown>): Promise<Record<string, string> | null> {
+  const prompt = GEMINI_INSTRUCTION + "\n\nDocument content:\n" + text;
+
+  try {
+    const polliBody = { model: "openai", messages: [{ role: "user", content: prompt }], temperature: 0.1 };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(POLLINATIONS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(polliBody),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const json = await res.json();
+      const content = json?.choices?.[0]?.message?.content;
+      if (content) {
+        debug && (debug.polliRaw = content.slice(0, 500));
+        const result = parseAnyJsonResponse(content);
+        if (result) return result;
+      }
+    } else {
+      debug && (debug.polliStatus = res.status);
+    }
+  } catch (e) {
+    debug && (debug.polliError = String(e));
+  }
+
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) { debug && (debug.geminiError = "no api key"); return null; }
+
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+  };
+  debug && (debug.geminiBodyLen = JSON.stringify(body).length);
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`Gemini text API error (${res.status}): ${errText}`);
+        debug && (debug.geminiHttpStatus = res.status);
+        debug && (debug.geminiHttpBody = errText.slice(0, 500));
+        if (res.status === 429 && attempt < MAX_RETRIES) {
+          debug && (debug.geminiRetry = true);
+          await new Promise(r => setTimeout(r, 3000));
+          continue;
+        }
+        return null;
+      }
+      const result = await res.json();
+      const textContent = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (textContent) {
+        debug && (debug.geminiRaw = textContent.slice(0, 500));
+        return parseAnyJsonResponse(textContent);
+      }
+    } catch (err) {
+      console.error(`Gemini attempt ${attempt + 1} failed:`, err);
+      debug && (debug.geminiCatchError = String(err));
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 1000));
+        continue;
+      }
+    }
+  }
+  return null;
+}
+
+function parseAnyJsonResponse(text: string): Record<string, string> | null {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  try {
+    const parsed = JSON.parse(jsonMatch[0]);
+    const mapped: Record<string, string> = {};
+    if (parsed.name) mapped.extractedName = String(parsed.name);
+    if (parsed.email) mapped.extractedEmail = String(parsed.email);
+    if (parsed.phone) {
+      let p = String(parsed.phone).replace(/\s+/g, "");
+      if (p.startsWith("0")) p = "+92" + p.substring(1);
+      else if (p.startsWith("92") && !p.startsWith("+92")) p = "+" + p;
+      else if (!p.startsWith("+")) p = "+92" + p;
+      if (p.startsWith("+92") && p.length >= 12) {
+        mapped.extractedPhone = "+92 " + p.substring(3, 6) + " " + p.substring(6);
+      } else {
+        mapped.extractedPhone = p;
+      }
+    }
+    if (parsed.pnc_license_number) mapped.extractedLicenseNumber = String(parsed.pnc_license_number);
+    if (parsed.address) mapped.extractedAddress = String(parsed.address);
+    if (parsed.languages) mapped.extractedLanguages = String(parsed.languages);
+    if (parsed.education) mapped.extractedEducation = String(parsed.education);
+    if (parsed.experience) mapped.extractedExperience = String(parsed.experience);
+    if (parsed.skills) mapped.extractedSkills = String(parsed.skills);
+    if (parsed.certifications) mapped.extractedCertifications = String(parsed.certifications);
+    if (Object.keys(mapped).length > 0) return mapped;
+  } catch {}
+  return null;
+}
+
+
+async function callGemini(file: File): Promise<Record<string, string> | null> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) return null;
+
+  const mimeType = getMimeType(file.name);
+
+  if (isTextFile(file.name)) {
+    const text = await file.text();
+    return await callAiWithText(text);
+  }
+
+  if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
+    const base64 = await fileToBase64(file);
+    const body = {
+      contents: [{ parts: [
+        { text: GEMINI_INSTRUCTION + "\n\nThis is a scanned document or image. Extract all text content from it." },
+        { inlineData: { mimeType, data: base64 } },
+      ] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+    };
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+        const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`Gemini API error (${res.status}): ${errText}`);
+          if (res.status === 429 && attempt < MAX_RETRIES) {
+            await new Promise(r => setTimeout(r, 3000));
+            continue;
+          }
+          return null;
+        }
+        const result = await res.json();
+        const textContent = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (textContent) return parseAnyJsonResponse(textContent);
+      } catch (err) {
+        console.error(`Gemini attempt ${attempt + 1} failed:`, err);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, 1000));
+          continue;
+        }
+      }
+    }
+    return null;
+  }
+
+  return null;
+}
+
+function mergeData(entries: Array<Record<string, string>>): Record<string, string> {
+  const merged: Record<string, string> = {};
+  for (const entry of entries) {
+    for (const [key, value] of Object.entries(entry)) {
+      if (value && !merged[key]) {
+        merged[key] = value;
+      }
+    }
+  }
+  return merged;
+}
+
+Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -50,218 +416,98 @@ serve(async (req) => {
     const cvFile = formData.get("cv") as File | null;
     const pncFile = formData.get("pnc") as File | null;
 
-    if (!pncFile) {
-      return new Response(JSON.stringify({ error: "PNC License file is mandatory." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if ((!cvFile || cvFile.size === 0) && (!pncFile || pncFile.size === 0)) {
+      return new Response(
+        JSON.stringify({ extractedData: {}, warning: "No files uploaded" }),
+        { headers: corsHeaders },
+      );
     }
 
-    const textContents: string[] = [];
-    const mediaParts: any[] = [];
+    const warnings: string[] = [];
+    const filesToProcess: Array<{ file: File; source: string }> = [];
 
-    // Process CV
-    if (cvFile) {
-      const cvBuf = await cvFile.arrayBuffer();
-      if (cvFile.name.endsWith(".docx")) {
+    for (const [key, file] of [["cv", cvFile], ["pnc", pncFile]] as const) {
+      if (!file || file.size === 0) continue;
+      if (file.size > MAX_FILE_SIZE) {
+        warnings.push(`${key} file exceeds 5MB limit`);
+        continue;
+      }
+      filesToProcess.push({ file, source: key });
+    }
+
+    const geminiResults: Array<Record<string, string>> = [];
+    const textFallbacks: string[] = [];
+    const debugDocx: Record<string, unknown>[] = [];
+
+    for (const { file, source } of filesToProcess) {
+      if (isTextFile(file.name)) {
+        textFallbacks.push(await file.text());
+      }
+
+      const isDocx = file.name.endsWith(".docx") || file.name.endsWith(".doc");
+      let docxDebug: Record<string, unknown> | undefined;
+
+      if (isDocx) {
         try {
-          const result = await mammoth.extractRawText({ arrayBuffer: cvBuf });
-          textContents.push(`CV FILE CONTENT (${cvFile.name}):\n${result.value}`);
-        } catch (_) {
-          textContents.push(`[Could not extract text from docx CV: ${cvFile.name}]`);
-        }
-      } else if (cvFile.type.startsWith("text/")) {
-        const text = new TextDecoder().decode(cvBuf);
-        textContents.push(`CV FILE CONTENT (${cvFile.name}):\n${text}`);
-      } else {
-        // PDF or image - safe chunked base64 conversion
-        const cvArr = new Uint8Array(cvBuf);
-        const chunks: string[] = [];
-        const chunkSize = 8192;
-        for (let i = 0; i < cvArr.length; i += chunkSize) {
-          const chunk = cvArr.subarray(i, i + chunkSize);
-          chunks.push(String.fromCharCode(...chunk));
-        }
-        const base64 = btoa(chunks.join(""));
-
-        let cvMime = cvFile.type;
-        const cvExt = cvFile.name.split(".").pop()?.toLowerCase();
-        if (!cvMime || cvMime === "application/octet-stream") {
-          if (cvExt === "pdf") cvMime = "application/pdf";
-          else if (cvExt === "png") cvMime = "image/png";
-          else if (cvExt === "webp") cvMime = "image/webp";
-          else cvMime = "image/jpeg";
-        }
-
-        mediaParts.push({
-          inlineData: {
-            mimeType: cvMime,
-            data: base64,
+          const { text: docxText, debug } = await extractDocxText(file);
+          docxDebug = debug;
+          if (docxText) {
+            const geminiResult = await callAiWithText(docxText, docxDebug);
+            if (geminiResult && Object.keys(geminiResult).length > 0) {
+              geminiResults.push(geminiResult);
+            } else {
+              warnings.push(`Could not extract data from ${file.name}`);
+            }
+            docxDebug.geminiResult = geminiResult;
+            debugDocx.push(docxDebug);
+            continue;
           }
-        });
+        } catch (e: any) {
+          docxDebug = { error: e.message, stack: e.stack };
+        }
       }
-    }
 
-    // Process PNC
-    if (pncFile) {
-      const pncBuf = await pncFile.arrayBuffer();
-      if (pncFile.name.endsWith(".docx")) {
-        try {
-          const result = await mammoth.extractRawText({ arrayBuffer: pncBuf });
-          textContents.push(`PNC LICENSE FILE CONTENT (${pncFile.name}):\n${result.value}`);
-        } catch (_) {
-          textContents.push(`[Could not extract text from docx PNC: ${pncFile.name}]`);
-        }
-      } else if (pncFile.type.startsWith("text/")) {
-        const text = new TextDecoder().decode(pncBuf);
-        textContents.push(`PNC LICENSE FILE CONTENT (${pncFile.name}):\n${text}`);
-      } else {
-        // PDF or image - safe chunked base64 conversion
-        const pncArr = new Uint8Array(pncBuf);
-        const chunks: string[] = [];
-        const chunkSize = 8192;
-        for (let i = 0; i < pncArr.length; i += chunkSize) {
-          const chunk = pncArr.subarray(i, i + chunkSize);
-          chunks.push(String.fromCharCode(...chunk));
-        }
-        const base64 = btoa(chunks.join(""));
-
-        let pncMime = pncFile.type;
-        const pncExt = pncFile.name.split(".").pop()?.toLowerCase();
-        if (!pncMime || pncMime === "application/octet-stream") {
-          if (pncExt === "pdf") pncMime = "application/pdf";
-          else if (pncExt === "png") pncMime = "image/png";
-          else if (pncExt === "webp") pncMime = "image/webp";
-          else pncMime = "image/jpeg";
-        }
-
-        mediaParts.push({
-          inlineData: {
-            mimeType: pncMime,
-            data: base64,
-          }
-        });
+      const geminiResult = await callGemini(file);
+      if (geminiResult && Object.keys(geminiResult).length > 0) {
+        geminiResults.push(geminiResult);
+      } else if (!isTextFile(file.name)) {
+        warnings.push(`Could not extract data from ${file.name}`);
       }
+
+      if (isDocx && docxDebug) debugDocx.push(docxDebug);
     }
 
-    const promptText = `You are an expert AI recruiter specializing in international nurse placement for healthcare systems in the UK, Middle East, and Europe.
-Analyze the uploaded nurse credentials (CV and/or PNC License) and extract structured information into a pristine JSON schema.
-
-Extracted fields guidelines:
-1. extractedName: Full legal name of the candidate nurse.
-2. extractedEmail: Contact email.
-3. extractedPhone: Contact phone number (usually starts with +92 or 03 for Pakistan).
-4. extractedLicenseNumber: PNC Registration / License number (mandatory from the license). For Pakistan Nursing Council (PNC) cards, carefully scan the text on the registration card to extract the alphanumeric registration/license number (e.g. A-XXXXX, G-XXXXX, PM-10-A-12345, PM-09-A-12345 or similar registration ID). This is usually labeled as "Registration No", "Reg No", or printed clearly near the bottom or center of the card.
-5. extractedAddress: Home address or domicile.
-6. extractedLanguages: Comma-separated languages they speak (e.g., Urdu, English).
-7. extractedEducation: Academic nursing degrees / diplomas.
-8. extractedCertifications: Professional licenses, BLS, ACLS, IELTS, etc.
-9. extractedExperience: Practical working history (e.g. 2 years at Shaukat Khanum Hospital).
-10. extractedSkills: Practical nursing competencies.
-
-CRITICAL INSTRUCTIONS FOR MULTIMODAL EXTRACTION:
-- Scan the uploaded documents carefully. If you receive an image or PDF of a card (such as a Pakistan Nursing Council Registration Card), extract the exact nurse name, license/registration number, and dates from the card text.
-- Merge the details from both the CV and the License card into a single unified JSON output.
-- Do NOT wrap the JSON in markdown backticks. Return ONLY a valid JSON object matching the schema below. Just raw JSON.
-
-JSON Schema:
-{
-  "extractedName": "string",
-  "extractedEmail": "string",
-  "extractedPhone": "string",
-  "extractedLicenseNumber": "string",
-  "extractedAddress": "string",
-  "extractedLanguages": "string",
-  "extractedEducation": "string",
-  "extractedCertifications": "string",
-  "extractedExperience": "string",
-  "extractedSkills": "string"
-}
-
-Document Content to analyze:
-${textContents.join("\n\n---\n\n")}
-`;
-
-    // Attempt Gemini first if API Key is available
-    let extractedText = "";
-    const apiKey = Deno.env.get("GEMINI_API_KEY");
-    if (apiKey) {
-      try {
-        const ai = new GoogleGenAI({ apiKey });
-        const contentsList: any[] = [];
-        for (const m of mediaParts) {
-          contentsList.push(m);
-        }
-        if (textContents.length > 0) {
-          contentsList.push({ text: textContents.join("\n\n---\n\n") });
-        }
-        contentsList.push({ text: promptText });
-
-        const geminiResponse = await ai.models.generateContent({
-          model: "gemini-3.5-flash",
-          contents: {
-            parts: contentsList
-          },
-          config: { responseMimeType: "application/json" },
-        });
-        extractedText = geminiResponse.text?.trim() || "";
-      } catch (err) {
-        console.error("Gemini primary extraction failed:", err);
-      }
+    let extractedData: Record<string, string> = {};
+    if (geminiResults.length > 0) {
+      extractedData = mergeData(geminiResults);
+    }
+    if (Object.keys(extractedData).length === 0 && textFallbacks.length > 0) {
+      const combinedText = textFallbacks.join("\n---\n");
+      extractedData = extractViaRegex(combinedText);
     }
 
-    // Fallback to Pollinations AI if Gemini wasn't used or failed
-    if (!extractedText) {
-      try {
-        const pResponse = await fetch("https://text.pollinations.ai/openai/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "openai",
-            messages: [
-              { role: "system", content: "You are a JSON only extraction assistant." },
-              { role: "user", content: promptText }
-            ]
-          })
-        });
-        if (pResponse.ok) {
-          const data = await pResponse.json();
-          extractedText = data.choices?.[0]?.message?.content || "";
-        }
-      } catch (_) {
-        // Silent fallback
-      }
-    }
+    const fileInfo = filesToProcess.map(f => ({ name: f.file.name, size: f.file.size, type: f.file.type, isDocx: f.file.name.endsWith(".docx") }));
+    const docxInfo = debugDocx.map(d => (typeof d === 'object' ? JSON.stringify(d).slice(0, 800) : String(d)));
 
-    let parsedData = {};
-    try {
-      parsedData = extractJson(extractedText);
-    } catch (_) {
-      parsedData = { error: "Failed to parse AI response into JSON.", raw: extractedText };
-    }
-
-    const finalExtracted = {
-      extractedName: (parsedData as any).extractedName || "",
-      extractedEmail: (parsedData as any).extractedEmail || "",
-      extractedPhone: (parsedData as any).extractedPhone || "",
-      extractedLicenseNumber: (parsedData as any).extractedLicenseNumber || "",
-      extractedAddress: (parsedData as any).extractedAddress || "",
-      extractedLanguages: (parsedData as any).extractedLanguages || "",
-      extractedEducation: (parsedData as any).extractedEducation || "",
-      extractedCertifications: (parsedData as any).extractedCertifications || "",
-      extractedExperience: (parsedData as any).extractedExperience || "",
-      extractedSkills: (parsedData as any).extractedSkills || ""
-    };
-
-    return new Response(JSON.stringify({ extractedData: finalExtracted }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
-  } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        extractedData,
+        warnings: warnings.length > 0 ? warnings : undefined,
+        _debugDocx: debugDocx.length > 0 ? debugDocx : undefined,
+        _files: fileInfo,
+        _docxDebugRaw: docxInfo,
+        _version: "mammoth-v3",
+      }),
+      { headers: corsHeaders },
+    );
+  } catch (err) {
+    console.error("Extraction error:", err);
+    return new Response(
+      JSON.stringify({
+        extractedData: {},
+        error: err instanceof Error ? err.message : "Failed to process files",
+      }),
+      { headers: corsHeaders },
+    );
   }
 });
