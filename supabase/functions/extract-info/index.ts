@@ -1,6 +1,6 @@
 import mammoth from "npm:mammoth@1.6.0";
 
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GEMINI_MODEL = "gemini-3.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20_000;
