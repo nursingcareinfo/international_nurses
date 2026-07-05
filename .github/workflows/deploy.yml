@@ -10,7 +10,7 @@ on:
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
   VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://ecxohbfvpmdgfiylkxpc.supabase.co' }}
-  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'sb_publishable_DdUnqwmCjPYZPEbDw3vtiA_GSZ7DMQI' }}
+  VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_DdUnqwmCjPYZPEbDw3vtiA_GSZ7DMQI' }}
 
 permissions:
   contents: read
