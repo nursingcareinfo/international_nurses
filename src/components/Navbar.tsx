@@ -162,7 +162,6 @@ export default function Navbar() {
                 Office Locations
               </button>
 
-              {/* Firebase Auth Mobile Integration */}
               {user ? (
                 <div className="border-t border-b border-gray-100 py-3 my-2 space-y-2">
                   <div className="flex items-center gap-3 px-3">
