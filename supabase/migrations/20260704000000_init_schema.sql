@@ -6,6 +6,35 @@
 create extension if not exists "uuid-ossp";
 
 -- ==========================================
+-- 0. NURSING APPLICATIONS TABLE (Core Submissions)
+-- ==========================================
+create table if not exists public.nursing_applications (
+    id integer primary key generated always as identity,
+    full_name text not null,
+    email text,
+    phone text,
+    license_number text,
+    ai_extracted_data jsonb default '{}'::jsonb,
+    survey_link_sent boolean default false,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+comment on table public.nursing_applications is 'Core application submissions from nurse candidates containing parsed resume data and PNC credentials.';
+
+-- ==========================================
+-- 0b. SURVEY RESPONSES TABLE (Questionnaire Answers)
+-- ==========================================
+create table if not exists public.survey_responses (
+    id uuid primary key default gen_random_uuid(),
+    application_id integer references public.nursing_applications(id) on delete cascade,
+    survey_data jsonb default '{}'::jsonb,
+    extracted_data jsonb default '{}'::jsonb,
+    created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+comment on table public.survey_responses is 'Full placement survey questionnaire responses linked to nursing applications.';
+
+-- ==========================================
 -- 1. USER PROFILES TABLE (Candidate Profiles)
 -- ==========================================
 create table if not exists public.user_profiles (
