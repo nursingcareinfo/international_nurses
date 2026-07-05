@@ -10,3 +10,5 @@ coverage/
 .playwright-mcp/
 *.jpg
 *.png
+*.pdf
+femalenurse/
