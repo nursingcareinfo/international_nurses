@@ -15,10 +15,8 @@ import {
   Home 
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { callEdgeFunction } from "../lib/supabase";
+import { callEdgeFunction, supabase } from "../lib/supabase";
 import PncOcrScanner from "./PncOcrScanner";
-import { db, auth, OperationType, handleFirestoreError } from "../lib/firebase";
-import { collection, doc, setDoc } from "firebase/firestore";
 
 
 export default function Survey() {
@@ -183,77 +181,56 @@ export default function Survey() {
     setSubmitting(true);
     setError(null);
 
-    // Generate clean unique document IDs for Firestore
-    const appId = doc(collection(db, "applications")).id;
-    const profileId = doc(collection(db, "user_profiles")).id;
-    const licenseId = doc(collection(db, "pnc_license_data")).id;
-
-    // Prepare robust payloads matching the security rules schemas
-    const firestoreAppPayload = {
-      id: appId,
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      licenseNumber: formData.licenseNumber,
-      extractedData: extractedData || {},
-      surveyData: formData,
-      createdAt: new Date().toISOString(),
-      userId: auth.currentUser?.uid || null,
-    };
-
-    const firestoreProfilePayload = {
-      id: profileId,
-      applicationId: appId,
-      fullName: formData.fullName,
-      email: formData.email,
-      phone: formData.phone,
-      address: formData.address || "",
-      languages: formData.languageProficiency || "",
-      education: formData.additionalQualifications || "",
-      experience: `${formData.jobTitle || ""} at ${formData.currentEmployer || ""}`.trim() || "No previous employer specified",
-      skills: extractedData?.extractedSkills || "Nursing Care",
-      createdAt: new Date().toISOString(),
-    };
-
-    const firestoreLicensePayload = {
-      id: licenseId,
-      applicationId: appId,
-      licenseNumber: formData.licenseNumber,
-      councilName: formData.councilName || "Pakistan Nursing Council",
-      category: formData.category || "Registered Nurse (RN)",
-      verificationStatus: formData.verificationStatus || "Active",
-      issueDate: formData.issueDate || "",
-      expiryDate: formData.expiryDate || "",
-      additionalQualifications: formData.additionalQualifications || "",
-      nursingSchool: formData.nursingSchool || "",
-      graduationYear: parseInt(formData.graduationYear) || 2019,
-      pncCardPresent: formData.pncCardPresent || "Yes",
-      createdAt: new Date().toISOString(),
-    };
-
     try {
-      // 1. Write Application to Firestore
-      try {
-        await setDoc(doc(db, "applications", appId), firestoreAppPayload);
-      } catch (e) {
-        handleFirestoreError(e, OperationType.CREATE, `/applications/${appId}`);
-      }
+      const { data: appData, error: appErr } = await supabase
+        .from("nursing_applications")
+        .insert({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          license_number: formData.licenseNumber,
+          ai_extracted_data: extractedData || {},
+          survey_link_sent: true,
+        })
+        .select()
+        .single();
 
-      // 2. Write Profile to Firestore
-      try {
-        await setDoc(doc(db, "user_profiles", profileId), firestoreProfilePayload);
-      } catch (e) {
-        handleFirestoreError(e, OperationType.CREATE, `/user_profiles/${profileId}`);
-      }
+      if (appErr) throw new Error(`Application insert failed: ${appErr.message}`);
 
-      // 3. Write PNC Credentials to Firestore
-      try {
-        await setDoc(doc(db, "pnc_license_data", licenseId), firestoreLicensePayload);
-      } catch (e) {
-        handleFirestoreError(e, OperationType.CREATE, `/pnc_license_data/${licenseId}`);
-      }
+      const { error: profileErr } = await supabase
+        .from("user_profiles")
+        .insert({
+          application_id: appData.id,
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address || "",
+          languages: formData.languageProficiency || "",
+          education: formData.additionalQualifications || "",
+          experience: `${formData.jobTitle || ""} at ${formData.currentEmployer || ""}`.trim() || "No previous employer specified",
+          skills: extractedData?.extractedSkills || "Nursing Care",
+        });
 
-      // 4. Fallback/Sync with custom local server or Supabase API if exists
+      if (profileErr) console.warn("Profile insert warning:", profileErr.message);
+
+      const { error: licenseErr } = await supabase
+        .from("pnc_license_data")
+        .insert({
+          application_id: appData.id,
+          license_number: formData.licenseNumber,
+          council_name: formData.councilName || "Pakistan Nursing Council",
+          category: formData.category || "Registered Nurse (RN)",
+          verification_status: formData.verificationStatus || "Active",
+          issue_date: formData.issueDate || null,
+          expiry_date: formData.expiryDate || null,
+          additional_qualifications: formData.additionalQualifications || "",
+          nursing_school: formData.nursingSchool || "",
+          graduation_year: parseInt(formData.graduationYear) || 2019,
+          pnc_card_present: formData.pncCardPresent || "Yes",
+        });
+
+      if (licenseErr) console.warn("License insert warning:", licenseErr.message);
+
       const payload = {
         fullName: formData.fullName,
         email: formData.email,

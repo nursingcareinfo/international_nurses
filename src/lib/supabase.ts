@@ -1,11 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 
-// @ts-ignore
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "https://ecxohbfvpmdgfiylkxpc.supabase.co";
-// @ts-ignore
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "sb_publishable_dummy_key_for_recruitment_portal";
+const supabaseUrl: string = (import.meta as any).env.VITE_SUPABASE_URL || "https://ecxohbfvpmdgfiylkxpc.supabase.co";
+const supabaseKey: string = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_dummy_key_for_recruitment_portal";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function callEdgeFunction(name: string, body: any) {
   // Always use local Express server for AI extraction and OCR endpoints in the dev environment
@@ -19,17 +17,13 @@ export async function callEdgeFunction(name: string, body: any) {
   const preferLocal = isAiEndpoint && isLocalContainer;
 
   // If we have real credentials and this is not a local AI endpoint request, try calling the Supabase Edge Function
-  // @ts-ignore
+  const env = (import.meta as any).env;
   const hasRealCredentials = 
     !preferLocal &&
-    // @ts-ignore
-    import.meta.env.VITE_SUPABASE_URL && 
-    // @ts-ignore
-    import.meta.env.VITE_SUPABASE_ANON_KEY && 
-    // @ts-ignore
-    !import.meta.env.VITE_SUPABASE_ANON_KEY.startsWith("sb_publishable_dummy") &&
-    // @ts-ignore
-    import.meta.env.VITE_SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
+    env.VITE_SUPABASE_URL && 
+    env.VITE_SUPABASE_PUBLISHABLE_KEY && 
+    !env.VITE_SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_dummy") &&
+    env.VITE_SUPABASE_PUBLISHABLE_KEY !== "YOUR_SUPABASE_ANON_KEY";
 
   if (hasRealCredentials) {
     try {
@@ -37,8 +31,8 @@ export async function callEdgeFunction(name: string, body: any) {
       const isFormData = body instanceof FormData;
       
       const headers: Record<string, string> = {
-        "apikey": supabaseAnonKey,
-        "Authorization": `Bearer ${supabaseAnonKey}`,
+        "apikey": supabaseKey,
+        "Authorization": `Bearer ${supabaseKey}`,
       };
       
       if (!isFormData) {

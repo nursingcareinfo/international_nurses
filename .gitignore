@@ -9,6 +9,4 @@ coverage/
 .omo/
 .playwright-mcp/
 *.jpg
-extraction-result.png
-live-site-check.png
-live-site-verified.png
+*.png

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
-import { db, auth } from "../lib/firebase";
+import { supabase } from "../lib/supabase";
 import { FileText, Shield, MapPin, Sparkles, CheckCircle2, Clock, Eye, ChevronDown, ChevronUp } from "lucide-react";
-import { useAuth } from "./FirebaseProvider";
+import { useAuth } from "./SupabaseProvider";
 import { motion, AnimatePresence } from "motion/react";
 
 interface Application {
@@ -31,19 +30,25 @@ export default function ApplicationsTracker() {
     const fetchUserApplications = async () => {
       setLoading(true);
       try {
-        const appCol = collection(db, "applications");
-        const q = query(
-          appCol,
-          where("userId", "==", user.uid)
-        );
-        const querySnapshot = await getDocs(q);
-        const appsList: Application[] = [];
-        querySnapshot.forEach((doc) => {
-          appsList.push({ id: doc.id, ...doc.data() } as Application);
-        });
-        
-        // Sort by createdAt client-side to ensure ordering without needing composite index setups immediately
-        appsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const { data: appsData, error } = await supabase
+          .from("nursing_applications")
+          .select("*")
+          .eq("email", user.email)
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        const appsList: Application[] = (appsData || []).map((app) => ({
+          id: String(app.id),
+          fullName: app.full_name || "",
+          email: app.email || "",
+          phone: app.phone || "",
+          licenseNumber: app.license_number || "",
+          createdAt: app.created_at || "",
+          surveyData: app.ai_extracted_data || {},
+          extractedData: app.ai_extracted_data || {},
+        }));
+
         setApplications(appsList);
       } catch (err) {
         console.error("Error fetching user applications:", err);

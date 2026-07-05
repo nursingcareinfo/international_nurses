@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Stethoscope, Menu, X, LogIn, LogOut, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { useAuth } from "./FirebaseProvider";
+import { useAuth } from "./SupabaseProvider";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -67,7 +67,7 @@ export default function Navbar() {
               Office Locations
             </button>
 
-            {/* Firebase Auth Desktop Integration */}
+            {/* Auth Desktop Integration */}
             {user ? (
               <div className="flex items-center gap-4 border-l border-gray-100 pl-4">
                 <div className="flex items-center gap-2.5">
