@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl: string = (import.meta as any).env.VITE_SUPABASE_URL || "https://ecxohbfvpmdgfiylkxpc.supabase.co";
-const supabaseKey: string = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_dummy_key_for_recruitment_portal";
+const supabaseKey: string = (import.meta as any).env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -22,7 +22,6 @@ export async function callEdgeFunction(name: string, body: any) {
     !preferLocal &&
     env.VITE_SUPABASE_URL && 
     env.VITE_SUPABASE_PUBLISHABLE_KEY && 
-    !env.VITE_SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_dummy") &&
     env.VITE_SUPABASE_PUBLISHABLE_KEY !== "YOUR_SUPABASE_ANON_KEY";
 
   if (hasRealCredentials) {
