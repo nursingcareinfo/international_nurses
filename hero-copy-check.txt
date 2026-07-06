@@ -1,0 +1,105 @@
+- generic [ref=f4e2]:
+  - navigation [ref=f4e3]:
+    - generic [ref=f4e5]:
+      - link "Global Nurse Portal" [ref=f4e7] [cursor=pointer]:
+        - /url: /international_nurses
+        - img [ref=f4e9]
+        - generic [ref=f4e13]: Global Nurse Portal
+      - generic [ref=f4e14]:
+        - button "Home" [ref=f4e15] [cursor=pointer]
+        - button "Benefits" [ref=f4e16] [cursor=pointer]
+        - button "Office Locations" [ref=f4e17] [cursor=pointer]
+        - button "Sign In with Google" [ref=f4e18] [cursor=pointer]:
+          - img [ref=f4e19]
+          - generic [ref=f4e22]: Sign In with Google
+        - button "Apply Now" [ref=f4e23] [cursor=pointer]
+  - generic [ref=f4e26]:
+    - generic [ref=f4e27]:
+      - generic [ref=f4e28]: Official Placement Program
+      - heading "Apply For International Nursing Pathways" [level=1] [ref=f4e29]
+      - paragraph [ref=f4e30]: Upload your Pakistan Nursing Council (PNC) license and CV to start your international nursing application.
+      - generic [ref=f4e31]:
+        - paragraph [ref=f4e32]: "Mandatory requirement:"
+        - paragraph [ref=f4e33]: PNC License (Image, PDF, DOCX, or Text file) is required for registration.
+    - generic [ref=f4e35]:
+      - heading "Start Your Global Profile" [level=2] [ref=f4e36]
+      - generic [ref=f4e37]:
+        - generic [ref=f4e38]: PNC Nursing License *
+        - generic [ref=f4e40] [cursor=pointer]:
+          - img [ref=f4e42]
+          - paragraph [ref=f4e45]: Drag & drop or browse
+          - paragraph [ref=f4e46]: "Supported: PDF, Word Doc, Images, Text (Max 15MB)"
+      - generic [ref=f4e47]:
+        - generic [ref=f4e48]: Professional Resume / CV (Optional)
+        - generic [ref=f4e50] [cursor=pointer]:
+          - img [ref=f4e52]
+          - paragraph [ref=f4e55]: Drag & drop or browse
+          - paragraph [ref=f4e56]: "Supported: PDF, Word Doc, Images, Text (Max 15MB)"
+      - button "Continue to Application" [disabled] [ref=f4e57] [cursor=pointer]:
+        - generic [ref=f4e58]: Continue to Application
+        - img [ref=f4e59]
+  - generic [ref=f4e62]:
+    - generic [ref=f4e63]:
+      - heading "Why Apply For International Nursing Roles?" [level=2] [ref=f4e64]
+      - paragraph [ref=f4e65]: Broaden your career horizons, support your family back in Pakistan, and make a massive global clinical impact.
+    - generic [ref=f4e66]:
+      - generic [ref=f4e67]:
+        - img [ref=f4e69]
+        - heading "Global Opportunities" [level=3] [ref=f4e72]
+        - paragraph [ref=f4e73]: Get direct access to fast-track nursing jobs in the UK, Middle East, and across Europe.
+      - generic [ref=f4e74]:
+        - img [ref=f4e76]
+        - heading "Competitive Salaries" [level=3] [ref=f4e78]
+        - paragraph [ref=f4e79]: Earn world-class wages, generous shift premiums, pension plans, and relocation allowances.
+      - generic [ref=f4e80]:
+        - img [ref=f4e82]
+        - heading "Professional Growth" [level=3] [ref=f4e85]
+        - paragraph [ref=f4e86]: Work in advanced, internationally accredited hospitals with premium modern technology.
+      - generic [ref=f4e87]:
+        - img [ref=f4e89]
+        - heading "Comprehensive Support" [level=3] [ref=f4e91]
+        - paragraph [ref=f4e92]: We handle your visa sponsorship, housing setup, PNC verification help, and flight details.
+  - contentinfo [ref=f4e93]:
+    - generic [ref=f4e94]:
+      - generic [ref=f4e95]:
+        - generic [ref=f4e96]:
+          - generic [ref=f4e97]:
+            - img [ref=f4e99]
+            - generic [ref=f4e103]: Global Nurse Portal
+          - paragraph [ref=f4e104]: Empowering professional Pakistani healthcare specialists with high-income global career pathways.
+        - generic [ref=f4e105]:
+          - heading "London Office" [level=4] [ref=f4e106]
+          - list [ref=f4e107]:
+            - listitem [ref=f4e108]:
+              - img [ref=f4e109]
+              - generic [ref=f4e112]: 88 Kingsway, Holborn, London WC2B 6AA, United Kingdom
+            - listitem [ref=f4e113]:
+              - img [ref=f4e114]
+              - generic [ref=f4e116]: +44 20 7946 0958
+        - generic [ref=f4e117]:
+          - heading "Dubai Office" [level=4] [ref=f4e118]
+          - list [ref=f4e119]:
+            - listitem [ref=f4e120]:
+              - img [ref=f4e121]
+              - generic [ref=f4e124]: Building 4, Dubai Healthcare City, Dubai, UAE
+            - listitem [ref=f4e125]:
+              - img [ref=f4e126]
+              - generic [ref=f4e128]: +971 4 324 5555
+        - generic [ref=f4e129]:
+          - heading "Singapore Office" [level=4] [ref=f4e130]
+          - list [ref=f4e131]:
+            - listitem [ref=f4e132]:
+              - img [ref=f4e133]
+              - generic [ref=f4e136]: 79 Anson Road, Singapore 079906
+            - listitem [ref=f4e137]:
+              - img [ref=f4e138]
+              - generic [ref=f4e141]: careers@globalnurseportal.com
+      - generic [ref=f4e142]:
+        - paragraph [ref=f4e143]: © 2026 Global Nurse Recruitment Portal. All rights reserved.
+        - generic [ref=f4e144]:
+          - link "Privacy Policy" [ref=f4e145] [cursor=pointer]:
+            - /url: "#"
+          - link "Terms of Service" [ref=f4e146] [cursor=pointer]:
+            - /url: "#"
+          - link "PNC Compliance" [ref=f4e147] [cursor=pointer]:
+            - /url: "#"

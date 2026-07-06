@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import ApplicationsTracker from "./components/ApplicationsTracker";
 import Benefits from "./components/Benefits";
+import Countries from "./components/Countries";
 import Footer from "./components/Footer";
 import Survey from "./components/Survey";
 
@@ -13,6 +14,7 @@ function LandingPage() {
       <Hero />
       <ApplicationsTracker />
       <Benefits />
+      <Countries />
       <Footer />
     </>
   );

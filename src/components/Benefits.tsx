@@ -65,7 +65,7 @@ export default function Benefits() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all group"
+                className="bg-[#faf8f5] p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-gray-200 transition-all group"
                 id={`benefit-card-${index}`}
               >
                 <div className={`p-4 rounded-xl inline-block ${benefit.color} mb-6 transition-transform group-hover:scale-110`}>

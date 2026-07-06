@@ -31,7 +31,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm" id="navbar">
+    <nav className="sticky top-0 z-50 bg-[#faf8f5]/95 backdrop-blur-md border-b border-gray-100 shadow-sm" id="navbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo Brand */}
@@ -140,7 +140,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-b border-gray-100 bg-white"
+            className="md:hidden border-b border-gray-100 bg-[#faf8f5]"
           >
             <div className="px-4 pt-2 pb-4 space-y-2">
               <button

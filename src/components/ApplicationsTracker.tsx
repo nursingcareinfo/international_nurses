@@ -86,7 +86,7 @@ export default function ApplicationsTracker() {
             <p className="font-sans text-sm text-gray-500">Retrieving secure profiles...</p>
           </div>
         ) : applications.length === 0 ? (
-          <div className="bg-white border border-gray-100 p-8 rounded-2xl text-center shadow-sm max-w-xl mx-auto space-y-4">
+          <div className="bg-[#faf8f5] border border-gray-100 p-8 rounded-2xl text-center shadow-sm max-w-xl mx-auto space-y-4">
             <div className="h-12 w-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto">
               <FileText className="h-6 w-6" />
             </div>
