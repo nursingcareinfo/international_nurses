@@ -63,6 +63,51 @@ serve(async (req) => {
       throw new Error(`Error inserting survey response: ${surveyErr.message}`);
     }
 
+    // 2b. Insert normalized answers into survey_answers for scalable evaluation
+    const sd = surveyData || {};
+    const toArray = (v: unknown): string[] | null => {
+      if (Array.isArray(v)) return v.map(String);
+      if (typeof v === "string" && v.length > 0) return [v];
+      return null;
+    };
+
+    const { error: answersErr } = await supabase
+      .from("survey_answers")
+      .insert({
+        application_id: applicationId,
+        vehicle_transport: sd.vehicleTransport ?? null,
+        professional_qualification: sd.professionalQualification ?? null,
+        specialization: toArray(sd.specialization),
+        total_years_experience: sd.totalYearsExperience ?? null,
+        home_care_experience: sd.homeCareExperience ?? null,
+        institute_name: sd.instituteName ?? null,
+        employment_status: sd.employmentStatus ?? null,
+        monthly_income: sd.monthlyIncome ?? null,
+        supplemental_income: sd.supplementalIncome ?? null,
+        expected_shift_pay: sd.expectedShiftPay ?? null,
+        weekly_availability: sd.weeklyAvailability ?? null,
+        available_shifts: toArray(sd.availableShifts),
+        travel_willingness: sd.travelWillingness ?? null,
+        transition_consideration: sd.transitionConsideration ?? null,
+        preferred_patient_types: toArray(sd.preferredPatientTypes),
+        comfort_working_alone: sd.comfortWorkingAlone ?? null,
+        challenges_experienced: toArray(sd.challengesExperienced),
+        biggest_fears: toArray(sd.biggestFears),
+        safer_with_platform: sd.saferWithPlatform ?? null,
+        describe_incident: sd.describeIncident ?? null,
+        aware_of_platform: sd.awareOfPlatform ?? null,
+        find_work_method: toArray(sd.findWorkMethod),
+        market_viability: sd.marketViability ?? null,
+        feature_priorities: toArray(sd.featurePriorities),
+        would_recommend: sd.wouldRecommend ?? null,
+        additional_comments: sd.additionalComments ?? null,
+        follow_up_consent: sd.followUpConsent ?? null,
+      });
+
+    if (answersErr) {
+      throw new Error(`Error inserting normalized survey answers: ${answersErr.message}`);
+    }
+
     // 3. Insert into pnc_license_data (normalized PNC card data)
     const pncPayload: Record<string, unknown> = {
       application_id: applicationId,
