@@ -173,7 +173,7 @@ export default function Hero() {
           </div>
 
           {/* Action Interactive Panel */}
-          <div className="lg:col-span-7 bg-gray-50 p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl relative overflow-hidden">
+          <div className="lg:col-span-7 bg-[#faf8f5] p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
               <img
                 src="https://images.unsplash.com/photo-1502481851512-e9e2529bfbf9?w=800&q=80&auto=format"
@@ -212,9 +212,9 @@ export default function Hero() {
                       className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] ${
                         pncDragActive 
                           ? "border-blue-500 bg-blue-50/50" 
-                          : pncFile 
-                            ? "border-green-400 bg-green-50/10 hover:border-green-500" 
-                            : "border-gray-200 bg-white hover:border-blue-400 hover:bg-gray-50/50"
+: pncFile
+                        ? "border-green-400 bg-green-50/10 hover:border-green-500"
+                        : "border-gray-200 bg-[#faf8f5] hover:border-blue-400 hover:bg-[#f5f2ed]"
                       }`}
                       id="pnc-dropzone"
                     >
@@ -266,9 +266,9 @@ export default function Hero() {
                       className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] ${
                         cvDragActive 
                           ? "border-blue-500 bg-blue-50/50" 
-                          : cvFile 
-                            ? "border-green-400 bg-green-50/10 hover:border-green-500" 
-                            : "border-gray-200 bg-white hover:border-blue-400 hover:bg-gray-50/50"
+: cvFile
+                        ? "border-green-400 bg-green-50/10 hover:border-green-500"
+                        : "border-gray-200 bg-[#faf8f5] hover:border-blue-400 hover:bg-[#f5f2ed]"
                       }`}
                       id="cv-dropzone"
                     >
@@ -382,7 +382,7 @@ export default function Hero() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <button
                       onClick={handleReset}
-                      className="flex-1 py-3 px-5 rounded-xl border border-gray-200 text-gray-600 bg-white font-sans text-sm font-semibold hover:bg-gray-50 cursor-pointer text-center"
+                      className="flex-1 py-3 px-5 rounded-xl border border-gray-200 text-gray-600 bg-[#faf8f5] font-sans text-sm font-semibold hover:bg-[#f5f2ed] cursor-pointer text-center"
                     >
                       Upload Different Files
                     </button>

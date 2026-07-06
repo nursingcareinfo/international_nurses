@@ -12,9 +12,9 @@ function LandingPage() {
     <>
       <Navbar />
       <Hero />
+      <Countries />
       <ApplicationsTracker />
       <Benefits />
-      <Countries />
       <Footer />
     </>
   );

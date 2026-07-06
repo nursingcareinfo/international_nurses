@@ -65,7 +65,7 @@ export default function ApplicationsTracker() {
   }
 
   return (
-    <div className="bg-gray-50/50 border-t border-b border-gray-100 py-16" id="applications-tracker">
+    <div className="bg-[#faf8f5]/50 border-t border-b border-gray-100 py-16" id="applications-tracker">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center max-w-3xl mx-auto mb-12">
@@ -110,12 +110,12 @@ export default function ApplicationsTracker() {
               return (
                 <div 
                   key={app.id}
-                  className="bg-white rounded-2xl border border-gray-150/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
+                  className="bg-[#faf8f5] rounded-2xl border border-gray-150/80 shadow-sm overflow-hidden hover:shadow-md transition-all duration-300"
                 >
                   {/* Card Header Accordion Trigger */}
                   <div 
                     onClick={() => setExpandedAppId(isExpanded ? null : app.id)}
-                    className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                    className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:bg-[#f5f2ed]/50 transition-colors"
                   >
                     <div className="flex items-start gap-4">
                       <div className="bg-blue-50 p-3 rounded-xl text-blue-600 shrink-0">
@@ -161,7 +161,7 @@ export default function ApplicationsTracker() {
                         initial={{ height: 0 }}
                         animate={{ height: "auto" }}
                         exit={{ height: 0 }}
-                        className="overflow-hidden border-t border-gray-100 bg-gray-50/30"
+                        className="overflow-hidden border-t border-gray-100 bg-[#faf8f5]/30"
                       >
                         <div className="p-6 md:p-8 space-y-6 text-left text-sm font-sans">
                           
@@ -169,7 +169,7 @@ export default function ApplicationsTracker() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             
                             {/* Left Col: Contact */}
-                            <div className="bg-white p-5 rounded-xl border border-gray-100 space-y-3">
+                            <div className="bg-[#faf8f5] p-5 rounded-xl border border-gray-100 space-y-3">
                               <h4 className="font-bold text-xs text-gray-400 tracking-wider uppercase">
                                 Verified Contact
                               </h4>
@@ -184,7 +184,7 @@ export default function ApplicationsTracker() {
                             </div>
 
                             {/* Middle Col: Placement Preferences */}
-                            <div className="bg-white p-5 rounded-xl border border-gray-100 space-y-3">
+                            <div className="bg-[#faf8f5] p-5 rounded-xl border border-gray-100 space-y-3">
                               <h4 className="font-bold text-xs text-gray-400 tracking-wider uppercase">
                                 Placement Targets
                               </h4>
@@ -207,25 +207,25 @@ export default function ApplicationsTracker() {
                             </div>
 
                             {/* Right Col: Timeline/Status tracker */}
-                            <div className="bg-white p-5 rounded-xl border border-gray-100 space-y-3">
+                            <div className="bg-[#faf8f5] p-5 rounded-xl border border-gray-100 space-y-3">
                               <h4 className="font-bold text-xs text-gray-400 tracking-wider uppercase">
                                 Workflow Progress
                               </h4>
                               <div className="space-y-3 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
                                 <div className="flex gap-2 items-center pl-1">
-                                  <CheckCircle2 className="h-4.5 w-4.5 text-green-500 shrink-0 z-10 bg-white rounded-full" />
+                                  <CheckCircle2 className="h-4.5 w-4.5 text-green-500 shrink-0 z-10 bg-[#faf8f5] rounded-full" />
                                   <span className="text-xs font-semibold text-gray-900">
                                     PNC Scanned & Saved
                                   </span>
                                 </div>
                                 <div className="flex gap-2 items-center pl-1">
-                                  <CheckCircle2 className="h-4.5 w-4.5 text-green-500 shrink-0 z-10 bg-white rounded-full" />
+                                  <CheckCircle2 className="h-4.5 w-4.5 text-green-500 shrink-0 z-10 bg-[#faf8f5] rounded-full" />
                                   <span className="text-xs font-semibold text-gray-900">
                                     Profile Questionnaire Complete
                                   </span>
                                 </div>
                                 <div className="flex gap-2 items-center pl-1">
-                                  <div className="h-4.5 w-4.5 rounded-full border-2 border-amber-500 flex items-center justify-center shrink-0 z-10 bg-white">
+                                  <div className="h-4.5 w-4.5 rounded-full border-2 border-amber-500 flex items-center justify-center shrink-0 z-10 bg-[#faf8f5]">
                                     <div className="h-2 w-2 rounded-full bg-amber-500"></div>
                                   </div>
                                   <span className="text-xs font-bold text-amber-700">
@@ -239,7 +239,7 @@ export default function ApplicationsTracker() {
 
                           {/* Credentials snapshot section */}
                           {app.extractedData && (
-                            <div className="bg-white p-6 rounded-xl border border-gray-100 space-y-3">
+                            <div className="bg-[#faf8f5] p-6 rounded-xl border border-gray-100 space-y-3">
                               <h4 className="font-bold text-xs text-blue-600 tracking-wider uppercase">
                                 Credentials Snapshot
                               </h4>

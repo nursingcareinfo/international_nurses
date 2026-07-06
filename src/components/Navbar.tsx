@@ -94,7 +94,7 @@ export default function Navbar() {
                 </div>
                 <button
                   onClick={() => logout()}
-                  className="flex items-center gap-1 text-gray-500 hover:text-red-600 font-sans text-xs font-semibold bg-gray-50 hover:bg-red-50/50 py-2 px-3 rounded-lg border border-gray-100 transition-all cursor-pointer"
+                  className="flex items-center gap-1 text-gray-500 hover:text-red-600 font-sans text-xs font-semibold bg-[#faf8f5] hover:bg-red-50/50 py-2 px-3 rounded-lg border border-gray-100 transition-all cursor-pointer"
                   title="Sign Out"
                 >
                   <LogOut className="h-3.5 w-3.5" />
@@ -145,19 +145,19 @@ export default function Navbar() {
             <div className="px-4 pt-2 pb-4 space-y-2">
               <button
                 onClick={() => handleScrollTo("navbar")}
-                className="block w-full text-left font-sans text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 py-2.5 px-3 rounded-lg"
+                className="block w-full text-left font-sans text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-[#f5f2ed] py-2.5 px-3 rounded-lg"
               >
                 Home
               </button>
               <button
                 onClick={() => handleScrollTo("benefits")}
-                className="block w-full text-left font-sans text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 py-2.5 px-3 rounded-lg"
+                className="block w-full text-left font-sans text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-[#f5f2ed] py-2.5 px-3 rounded-lg"
               >
                 Benefits
               </button>
               <button
                 onClick={() => handleScrollTo("contact")}
-                className="block w-full text-left font-sans text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 py-2.5 px-3 rounded-lg"
+                className="block w-full text-left font-sans text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-[#f5f2ed] py-2.5 px-3 rounded-lg"
               >
                 Office Locations
               </button>
