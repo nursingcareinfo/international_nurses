@@ -170,6 +170,19 @@ export default function Hero() {
               <p className="font-sans text-sm font-semibold text-gray-900">Mandatory requirement:</p>
               <p className="font-sans text-sm text-gray-500">PNC License (Image, PDF, DOCX, or Text file) is required for registration.</p>
             </div>
+            
+            {/* Zero Cost Trust Badge */}
+            <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex items-center gap-3">
+              <div className="bg-green-100 p-2 rounded-xl">
+                <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-sans text-sm font-bold text-green-800">Zero Upfront Cost</p>
+                <p className="font-sans text-xs text-green-700">You pay only when you receive your appointment letter — no hidden fees, no surprises.</p>
+              </div>
+            </div>
           </div>
 
           {/* Action Interactive Panel */}
