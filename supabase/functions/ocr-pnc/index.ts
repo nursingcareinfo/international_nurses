@@ -93,25 +93,23 @@ serve(async (req) => {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const ocrPrompt = `You are an expert OCR and credential validation system. 
-Analyze the uploaded image of a Pakistan Nursing Council (PNC) registration card.
-Your goal is to extract the following two pieces of information:
-1. "licenseNumber": The official PNC registration/license/card number. PNC registration numbers typically look like:
-   - G-XXXXX (where X is a digit)
-   - A-XXXXX
-   - PM-XX-A-XXXXX (e.g., PM-10-A-12345 or PM-12-G-54321)
-   Look for labels such as "Registration No", "Reg No", "Reg. No.", "PNC No", or any clean alphanumeric code on the card.
-2. "expiryDate": The card's expiration date in standard "YYYY-MM-DD" format. Look for labels like "Valid Upto", "Expiry Date", "Valid Up to", "Expires On", or similar fields. Read the date from the card (e.g. "15-05-2028", "31 Dec 2029", "25/11/2027") and convert it to standard "YYYY-MM-DD" format.
+    const ocrPrompt = `You are an expert OCR engine for Pakistan Nursing Council (PNC) registration cards.
 
-If any field is completely unreadable or missing, return an empty string for that field.
+Analyze the uploaded card image and extract exactly these two fields:
 
-CRITICAL: Return ONLY a valid JSON object matching the schema below. Do NOT wrap it in any markdown backticks. Just raw JSON.
+1. "licenseNumber": The PNC registration number. Common formats:
+   - G-XXXXX (e.g. G-12345)
+   - A-XXXXX (e.g. A-98765)
+   - PM-XX-A-XXXXX (e.g. PM-10-A-12345)
+   Look near labels: "Registration No", "Reg No", "Reg. No.", "PNC No", or any printed alphanumeric code.
 
-JSON Schema:
-{
-  "licenseNumber": "string",
-  "expiryDate": "string"
-}`;
+2. "expiryDate": Expiration date in YYYY-MM-DD format.
+   Look near labels: "Valid Upto", "Expiry Date", "Valid Up to", "Expires On".
+   Convert any date format (e.g. "15-05-2028", "31 Dec 2029", "25/11/2027") to "YYYY-MM-DD".
+
+If a field is unreadable or missing, return it as an empty string.
+
+Return ONLY a raw JSON object. No markdown, no code fences, no extra text.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",

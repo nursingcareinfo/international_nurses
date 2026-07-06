@@ -95,28 +95,33 @@ function isTextFile(fileName: string): boolean {
   return name.endsWith(".txt") || name.endsWith(".csv") || name.endsWith(".json") || name.endsWith(".md");
 }
 
-const GEMINI_INSTRUCTION = `You are a precise OCR extraction engine for nursing CV/resume and PNC license documents from Pakistan.
+const GEMINI_INSTRUCTION = `You are a precise data extraction engine for Pakistani nursing CVs and PNC license documents.
 
-Extract the following fields from the document. Look for them even if they appear in different formats, tables, or layouts. Be thorough — scan the entire document.
+Extract the fields below from the document text. Return ONLY a single JSON object — no markdown, no code fences, no greeting, no explanation.
 
-Required fields (output JSON keys):
-- name: Full name of the candidate (e.g. "Fatima Akhtar")
-- email: Email address
-- phone: Phone number with country code (Pakistan: +92...)
-- pnc_license_number: PNC license number (e.g. "PNC-12345" or just "12345")
-- address: Full residential address
-- languages: Languages spoken (comma separated)
-- education: Educational qualifications (e.g. "BSN, Post-RN")
-- experience: Professional experience summary
-- skills: Clinical/technical skills (comma separated)
-- certifications: Professional certifications (e.g. "ACLS, BLS, PALS")
+Expected output format (use these exact 10 keys, omit any field not found):
+{
+  "name": "Full name of the nurse candidate",
+  "email": "Email address",
+  "phone": "Phone with Pakistan country code +92...",
+  "pnc_license_number": "PNC registration/license number",
+  "address": "Full residential address",
+  "languages": "Languages spoken (comma-separated, e.g. Urdu, English, Punjabi)",
+  "education": "Educational qualifications (e.g. BSN, Post-RN, Diploma in Midwifery, MSc Nursing)",
+  "experience": "Professional experience summary",
+  "skills": "Clinical/technical skills (comma-separated, e.g. Patient Assessment, Wound Care, IV Therapy, NICU)",
+  "certifications": "Professional certifications (comma-separated, e.g. ACLS, BLS, PALS)"
+}
 
-Rules:
-- If a field is not found anywhere in the document, omit it from the JSON.
-- Extract the EXACT text — do not paraphrase.
-- For phone numbers, use international format.
-- For PNC license, look for "PNC" followed by numbers, or just a 4-10 digit number near "License" or "Licence".
-- Return ONLY valid JSON with no markdown formatting, no code blocks, no extra text.`;
+Extraction rules:
+- Extract EXACT text from the document — do not paraphrase or summarize.
+- Omit any field completely if not found (do NOT include it with an empty string value).
+- For phone: always convert to international format starting with +92 for Pakistani numbers.
+- For PNC license: look for "PNC" followed by digits, or a registration number near "License"/"Licence"/"Reg No".
+- For education: capture degree names like BSN, Post-RN, Diploma in Midwifery, MSc Nursing, etc.
+- For skills: capture specific clinical skills verbatim.
+- Scan tables, headers, footers, and all sections of the document.
+- Return ONLY valid JSON. No markdown formatting, no code blocks, no extra text.`;
 
 const POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions";
 
@@ -351,7 +356,7 @@ async function callGemini(file: File): Promise<Record<string, string> | null> {
     const base64 = await fileToBase64(file);
     const body = {
       contents: [{ parts: [
-        { text: GEMINI_INSTRUCTION + "\n\nThis is a scanned document or image. Extract all text content from it." },
+        { text: GEMINI_INSTRUCTION + "\n\nThis is a scanned document or image. Extract the requested fields from it. Return ONLY the JSON as specified above." },
         { inlineData: { mimeType, data: base64 } },
       ] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
