@@ -1,9 +1,9 @@
 import mammoth from "npm:mammoth@1.6.0";
 
-const GEMINI_MODEL = "gemini-3.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const FETCH_TIMEOUT_MS = 20_000;
+const FETCH_TIMEOUT_MS = 30_000;
 const MAX_RETRIES = 2;
 
 const corsHeaders = {
@@ -259,7 +259,7 @@ async function callAiWithText(text: string, debug?: Record<string, unknown>): Pr
 
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+    generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
   };
   debug && (debug.geminiBodyLen = JSON.stringify(body).length);
 
@@ -354,7 +354,7 @@ async function callGemini(file: File): Promise<Record<string, string> | null> {
         { text: GEMINI_INSTRUCTION + "\n\nThis is a scanned document or image. Extract all text content from it." },
         { inlineData: { mimeType, data: base64 } },
       ] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 1024 },
+      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
     };
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

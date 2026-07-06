@@ -242,7 +242,7 @@ JSON Schema:
       contentsList.push({ text: systemPrompt });
 
       const geminiResponse = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: {
           parts: contentsList
         },
@@ -328,7 +328,7 @@ JSON Schema:
 }`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: {
           parts: [
             parsedFile.part,
