@@ -148,7 +148,7 @@ export default function Hero() {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-white" id="apply-section">
+    <section className="py-16 md:py-24 bg-warm-light/50" id="apply-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Outer Grid */}
@@ -174,6 +174,13 @@ export default function Hero() {
 
           {/* Action Interactive Panel */}
           <div className="lg:col-span-7 bg-gray-50 p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
+              <img
+                src="https://images.unsplash.com/photo-1502481851512-e9e2529bfbf9?w=800&q=80&auto=format"
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            </div>
             
             <AnimatePresence mode="wait">
               

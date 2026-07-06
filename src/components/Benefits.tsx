@@ -1,36 +1,47 @@
 import { Globe, DollarSign, TrendingUp, HeartHandshake } from "lucide-react";
 import { motion } from "motion/react";
 
+const IMAGES = {
+  plane: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=300&fit=crop&auto=format",
+  nurse: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=300&fit=crop&auto=format",
+  passport: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop&auto=format",
+  flags: "https://images.unsplash.com/photo-1502481851512-e9e2529bfbf9?w=400&h=300&fit=crop&auto=format",
+};
+
 const BENEFITS_DATA = [
   {
     icon: Globe,
     title: "Global Opportunities",
     description: "Get direct access to fast-track nursing jobs in the UK, Middle East, and across Europe.",
-    color: "text-blue-600 bg-blue-50"
+    color: "text-blue-600 bg-blue-50",
+    image: IMAGES.plane,
   },
   {
     icon: DollarSign,
     title: "Competitive Salaries",
     description: "Earn world-class wages, generous shift premiums, pension plans, and relocation allowances.",
-    color: "text-green-600 bg-green-50"
+    color: "text-green-600 bg-green-50",
+    image: IMAGES.flags,
   },
   {
     icon: TrendingUp,
     title: "Professional Growth",
     description: "Work in advanced, internationally accredited hospitals with premium modern technology.",
-    color: "text-purple-600 bg-purple-50"
+    color: "text-purple-600 bg-purple-50",
+    image: IMAGES.nurse,
   },
   {
     icon: HeartHandshake,
     title: "Comprehensive Support",
     description: "We handle your visa sponsorship, housing setup, PNC verification help, and flight details.",
-    color: "text-orange-600 bg-orange-50"
+    color: "text-orange-600 bg-orange-50",
+    image: IMAGES.passport,
   }
 ];
 
 export default function Benefits() {
   return (
-    <section id="benefits" className="py-20 bg-gray-50">
+    <section id="benefits" className="py-20 bg-warm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Heading */}
@@ -63,9 +74,18 @@ export default function Benefits() {
                 <h3 className="font-sans text-xl font-bold text-gray-900 tracking-tight mb-3">
                   {benefit.title}
                 </h3>
-                <p className="font-sans text-base text-gray-500 leading-relaxed">
+                <p className="font-sans text-base text-gray-500 leading-relaxed mb-6">
                   {benefit.description}
                 </p>
+                <div className="relative h-32 -mx-8 -mb-8 overflow-hidden rounded-b-2xl">
+                  <img
+                    src={benefit.image}
+                    alt=""
+                    loading="lazy"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-white/60 to-transparent" />
+                </div>
               </motion.div>
             );
           })}
