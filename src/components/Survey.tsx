@@ -182,55 +182,6 @@ export default function Survey() {
     setError(null);
 
     try {
-      const { data: appData, error: appErr } = await supabase
-        .from("nursing_applications")
-        .insert({
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          license_number: formData.licenseNumber,
-          ai_extracted_data: extractedData || {},
-          survey_link_sent: true,
-        })
-        .select()
-        .single();
-
-      if (appErr) throw new Error(`Application insert failed: ${appErr.message}`);
-
-      const { error: profileErr } = await supabase
-        .from("user_profiles")
-        .insert({
-          application_id: appData.id,
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          address: formData.address || "",
-          languages: formData.languageProficiency || "",
-          education: formData.additionalQualifications || "",
-          experience: `${formData.jobTitle || ""} at ${formData.currentEmployer || ""}`.trim() || "No previous employer specified",
-          skills: extractedData?.extractedSkills || "Nursing Care",
-        });
-
-      if (profileErr) console.warn("Profile insert warning:", profileErr.message);
-
-      const { error: licenseErr } = await supabase
-        .from("pnc_license_data")
-        .insert({
-          application_id: appData.id,
-          license_number: formData.licenseNumber,
-          council_name: formData.councilName || "Pakistan Nursing Council",
-          category: formData.category || "Registered Nurse (RN)",
-          verification_status: formData.verificationStatus || "Active",
-          issue_date: formData.issueDate || null,
-          expiry_date: formData.expiryDate || null,
-          additional_qualifications: formData.additionalQualifications || "",
-          nursing_school: formData.nursingSchool || "",
-          graduation_year: parseInt(formData.graduationYear) || 2019,
-          pnc_card_present: formData.pncCardPresent || "Yes",
-        });
-
-      if (licenseErr) console.warn("License insert warning:", licenseErr.message);
-
       const payload = {
         fullName: formData.fullName,
         email: formData.email,
@@ -240,12 +191,7 @@ export default function Survey() {
         surveyData: formData,
       };
 
-      try {
-        await callEdgeFunction("submit-complete", payload);
-      } catch (edgeErr) {
-        console.warn("API/Supabase sync bypass or non-blocking error:", edgeErr);
-      }
-
+      await callEdgeFunction("submit-complete", payload);
       setSubmitted(true);
       sessionStorage.removeItem("extractedData");
     } catch (err: any) {

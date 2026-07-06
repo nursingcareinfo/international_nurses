@@ -60,8 +60,7 @@ serve(async (req) => {
       });
 
     if (surveyErr) {
-      // Non-blocking — log but don't fail the whole request
-      console.error("Error inserting survey response:", surveyErr.message);
+      throw new Error(`Error inserting survey response: ${surveyErr.message}`);
     }
 
     // 3. Insert into pnc_license_data (normalized PNC card data)
@@ -84,7 +83,7 @@ serve(async (req) => {
       .insert(pncPayload);
 
     if (pncErr) {
-      console.error("Error inserting PNC license data:", pncErr.message);
+      throw new Error(`Error inserting PNC license data: ${pncErr.message}`);
     }
 
     // 4. Insert into user_profiles (normalized candidate profile)
@@ -107,7 +106,7 @@ serve(async (req) => {
       .insert(profilePayload);
 
     if (profileErr) {
-      console.error("Error inserting user profile:", profileErr.message);
+      throw new Error(`Error inserting user profile: ${profileErr.message}`);
     }
 
     return new Response(
