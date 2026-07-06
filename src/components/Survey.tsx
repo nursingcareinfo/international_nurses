@@ -60,16 +60,15 @@ export default function Survey() {
 
   const handleFieldChange = (field: string, value: any) => {
     setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
       if (field === "specialization" || field === "availableShifts" || field === "preferredPatientTypes" || field === "challengesExperienced" || field === "biggestFears" || field === "findWorkMethod" || field === "featurePriorities") {
-        const current = updated[field] as string[];
+        const current = prev[field] as string[];
         if (current.includes(value)) {
-          updated[field] = current.filter((v) => v !== value);
+          return { ...prev, [field]: current.filter((v) => v !== value) };
         } else {
-          updated[field] = [...current, value];
+          return { ...prev, [field]: [...current, value] };
         }
       }
-      return updated;
+      return { ...prev, [field]: value };
     });
   };
 
