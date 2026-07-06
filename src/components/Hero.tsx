@@ -217,6 +217,7 @@ export default function Hero() {
                         onChange={handlePncChange}
                         className="hidden"
                         accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.txt"
+                        capture="environment"
                       />
                       {pncFile ? (
                         <div className="space-y-2 text-center">

@@ -175,6 +175,7 @@ export default function PncOcrScanner({
                   onChange={handleFileChange}
                   className="hidden"
                   accept="image/png, image/jpeg, image/jpg, image/webp"
+                  capture="environment"
                 />
                 <div className="bg-blue-50 p-3 rounded-full text-blue-600 mb-3">
                   <Upload className="h-6 w-6" />
