@@ -98,7 +98,7 @@ export default function PncOcrScanner({
       } else if (res && res.error) {
         throw new Error(res.error);
       } else {
-        throw new Error("Could not extract details. Please make sure the PNC Card is clearly visible, bright, and not blurry.");
+        throw new Error("Could not read card details. Please make sure the PNC Card is clearly visible, bright, and not blurry.");
       }
     } catch (err: any) {
       console.error(err);
@@ -137,12 +137,9 @@ export default function PncOcrScanner({
           </div>
           <div>
             <h3 className="font-sans font-bold text-base">PNC Smart Card Scanner</h3>
-            <p className="font-sans text-xs text-blue-100 mt-0.5">Specialized Gemini Vision OCR Card Reader</p>
+            <p className="font-sans text-xs text-blue-100 mt-0.5">Upload your PNC card to auto-fill license details</p>
           </div>
         </div>
-        <span className="text-xs font-semibold bg-white/10 px-2.5 py-1 rounded-full border border-white/20">
-          Powered by Gemini 3.5
-        </span>
       </div>
 
       <div className="p-6">
@@ -156,7 +153,7 @@ export default function PncOcrScanner({
               className="space-y-4"
             >
               <div className="text-sm text-gray-500 leading-relaxed">
-                Have an image of your physical <strong>Pakistan Nursing Council (PNC)</strong> registration card? Drag or upload it below to verify and fill your license number and expiry date automatically with extremely high precision.
+                Have an image of your physical <strong>Pakistan Nursing Council (PNC)</strong> registration card? Drag or upload it below to scan your license number and expiry date.
               </div>
 
               <div
@@ -250,10 +247,10 @@ export default function PncOcrScanner({
                     <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-4">
                       <h4 className="font-sans font-bold text-sm text-blue-900 flex items-center gap-1.5">
                         <ScanLine className="h-4 w-4" />
-                        Ready to extract credentials
+                        Ready to scan card
                       </h4>
                       <p className="font-sans text-xs text-blue-700/80 mt-1 leading-relaxed">
-                        Gemini Vision API will read the text of the Pakistan Nursing Council Registration Card, isolate the registration/license ID and identify its expiration/validity date with extreme visual accuracy.
+                        Upload an image of your Pakistan Nursing Council Registration Card to read your license number and expiry date.
                       </p>
                       
                       <button
@@ -261,8 +258,8 @@ export default function PncOcrScanner({
                         onClick={handleStartScan}
                         className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2.5 px-4 rounded-xl shadow-sm transition-all flex items-center justify-center gap-2"
                       >
-                        <Sparkles className="h-4 w-4 text-yellow-300" />
-                        <span>Extract Card Credentials</span>
+                        <ScanLine className="h-4 w-4" />
+                        <span>Scan Card Details</span>
                       </button>
                     </div>
                   )}
@@ -271,13 +268,13 @@ export default function PncOcrScanner({
                     <div className="border border-blue-100 bg-blue-50/10 rounded-xl p-4 space-y-2">
                       <div className="flex items-center gap-2 text-sm font-bold text-gray-800">
                         <RotateCw className="h-4 w-4 animate-spin text-blue-600" />
-                        <span>Gemini Vision API OCR is active...</span>
+                        <span>Scanning card...</span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
                         <div className="bg-blue-600 h-1.5 rounded-full animate-[shimmer_1.5s_infinite]" style={{ width: "80%" }}></div>
                       </div>
                       <p className="font-sans text-xs text-gray-400 italic mt-1">
-                        Analyzing card layout, text patterns, registration numbers, and date structures.
+                        Reading card image for license number and expiry date.
                       </p>
                     </div>
                   )}
@@ -291,7 +288,7 @@ export default function PncOcrScanner({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-green-800 font-bold text-sm">
                           <CheckCircle className="h-4 w-4 text-green-600" />
-                          <span>Credentials Extracted Successfully!</span>
+                          <span>Card Scanned Successfully!</span>
                         </div>
                         {applied && (
                           <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded">
@@ -304,7 +301,7 @@ export default function PncOcrScanner({
                         <div className="bg-white border border-green-100 rounded-lg p-2.5 shadow-2xs">
                           <div className="flex items-center gap-1 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                             <FileKey className="h-3 w-3 text-blue-500" />
-                            <span>Extracted License No</span>
+                            <span>License Number</span>
                           </div>
                           <div className="font-mono text-sm font-bold text-blue-700 mt-1 truncate">
                             {results.licenseNumber || <span className="text-gray-300 italic font-sans font-normal text-xs">Not found</span>}
@@ -314,7 +311,7 @@ export default function PncOcrScanner({
                         <div className="bg-white border border-green-100 rounded-lg p-2.5 shadow-2xs">
                           <div className="flex items-center gap-1 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                             <Calendar className="h-3 w-3 text-emerald-500" />
-                            <span>Extracted Expiry Date</span>
+                            <span>Expiry Date</span>
                           </div>
                           <div className="font-mono text-sm font-bold text-emerald-700 mt-1 truncate">
                             {results.expiryDate || <span className="text-gray-300 italic font-sans font-normal text-xs">Not found</span>}
@@ -339,14 +336,14 @@ export default function PncOcrScanner({
                     <div className="bg-red-50 border border-red-100 text-red-800 rounded-xl p-4 flex items-start gap-2.5">
                       <ShieldAlert className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                       <div className="text-xs">
-                        <p className="font-bold">Extraction failed</p>
+                        <p className="font-bold">Scanning failed</p>
                         <p className="mt-1 leading-relaxed text-red-700/95">{error}</p>
                         <button
                           type="button"
                           onClick={handleStartScan}
                           className="mt-2 text-blue-600 font-bold hover:underline"
                         >
-                          Retry Extraction
+                          Retry Scan
                         </button>
                       </div>
                     </div>

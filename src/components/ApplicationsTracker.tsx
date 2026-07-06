@@ -237,23 +237,23 @@ export default function ApplicationsTracker() {
 
                           </div>
 
-                          {/* AI extracted snapshot section */}
+                          {/* Credentials snapshot section */}
                           {app.extractedData && (
                             <div className="bg-white p-6 rounded-xl border border-gray-100 space-y-3">
                               <h4 className="font-bold text-xs text-blue-600 tracking-wider uppercase">
-                                AI Extracted Credentials Snapshot
+                                Credentials Snapshot
                               </h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                 <div>
-                                  <span className="text-gray-400">Extracted Name</span>
+                                  <span className="text-gray-400">Name</span>
                                   <p className="font-semibold text-gray-800">{app.extractedData.extractedName || "N/A"}</p>
                                 </div>
                                 <div>
-                                  <span className="text-gray-400">Extracted Experience</span>
+                                  <span className="text-gray-400">Experience</span>
                                   <p className="font-semibold text-gray-800 truncate">{app.extractedData.extractedExperience || "N/A"}</p>
                                 </div>
                                 <div className="col-span-1 md:col-span-2">
-                                  <span className="text-gray-400">Extracted Clinical Skills</span>
+                                  <span className="text-gray-400">Clinical Skills</span>
                                   <p className="font-semibold text-gray-800">{app.extractedData.extractedSkills || "N/A"}</p>
                                 </div>
                               </div>

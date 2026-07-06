@@ -134,7 +134,7 @@ export default function Hero() {
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || "An error occurred during AI extraction. Please try again with clear files.");
+      setError(err.message || "An error occurred while processing your documents. Please try again with clear files.");
     } finally {
       setLoading(false);
     }
@@ -163,7 +163,7 @@ export default function Hero() {
               Apply For International Nursing Pathways
             </h1>
             <p className="font-sans text-lg text-gray-500 leading-relaxed">
-              Upload your Pakistan Nursing Council (PNC) license and CV. Our AI will automatically verify details, structure your clinical skills, and match you with premium global hospitals.
+              Upload your Pakistan Nursing Council (PNC) license and CV to start your international nursing application.
             </p>
             
             <div className="border-l-4 border-blue-600 pl-4 py-1 space-y-1">
@@ -307,13 +307,13 @@ export default function Hero() {
                     >
                       <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-sans font-bold text-sm text-red-800">Verification Failure</h4>
+                        <h4 className="font-sans font-bold text-sm text-red-800">Submission Error</h4>
                         <p className="font-sans text-xs text-red-700 mt-1">{error}</p>
                       </div>
                     </motion.div>
                   )}
 
-                  {/* Extract Trigger Button */}
+                  {/* Submit Button */}
                   <button
                     onClick={handleExtractSubmit}
                     disabled={loading || !pncFile}
@@ -327,11 +327,11 @@ export default function Hero() {
                     {loading ? (
                       <>
                         <RotateCw className="h-4 w-4 animate-spin" />
-                        <span>AI is extracting your profile...</span>
+                        <span>Processing your documents...</span>
                       </>
                     ) : (
                       <>
-                        <span>Verify & Extract Details</span>
+                        <span>Continue to Application</span>
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}
@@ -356,7 +356,7 @@ export default function Hero() {
                     </div>
                     <div>
                       <span className="font-sans text-xs font-bold text-green-600 tracking-wider uppercase">
-                        Verification Complete
+                        Documents Received
                       </span>
                       <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight mt-1" id="welcome-heading">
                         Welcome, {extractedData.extractedName || "Candidate Nurse"}!
@@ -365,54 +365,10 @@ export default function Hero() {
                   </div>
 
                   <p className="font-sans text-sm text-gray-500 leading-relaxed">
-                    Our AI has successfully read your documents. Please review the summary of parsed credentials. Click the button below to complete the placement survey.
+                    Your documents have been received. Click the button below to complete the placement survey.
                   </p>
 
-                  {/* Credential Card */}
-                  <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm space-y-4 max-h-[350px] overflow-y-auto" id="read-only-extracted-summary">
-                    <h3 className="font-sans font-bold text-xs text-gray-400 tracking-widest uppercase">
-                      Extracted Credentials Summary
-                    </h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-sans">
-                      
-                      <div className="space-y-1">
-                        <span className="text-gray-400 block text-xs">Full Name</span>
-                        <span className="font-bold text-gray-900">{extractedData.extractedName || "N/A"}</span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-gray-400 block text-xs">PNC Registration / License</span>
-                        <span className="font-bold text-blue-600 font-mono">{extractedData.extractedLicenseNumber || "N/A"}</span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-gray-400 block text-xs">Email Address</span>
-                        <span className="font-medium text-gray-800">{extractedData.extractedEmail || "N/A"}</span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-gray-400 block text-xs">Phone Number</span>
-                        <span className="font-medium text-gray-800">{extractedData.extractedPhone || "N/A"}</span>
-                      </div>
-
-                      <div className="col-span-1 md:col-span-2 space-y-1 border-t border-gray-50 pt-2">
-                        <span className="text-gray-400 block text-xs">Academic Education</span>
-                        <span className="text-gray-700">{extractedData.extractedEducation || "N/A"}</span>
-                      </div>
-
-                      <div className="col-span-1 md:col-span-2 space-y-1 border-t border-gray-50 pt-2">
-                        <span className="text-gray-400 block text-xs">Experience</span>
-                        <span className="text-gray-700">{extractedData.extractedExperience || "N/A"}</span>
-                      </div>
-
-                      <div className="col-span-1 md:col-span-2 space-y-1 border-t border-gray-50 pt-2">
-                        <span className="text-gray-400 block text-xs">Clinical Skills</span>
-                        <span className="text-gray-700">{extractedData.extractedSkills || "N/A"}</span>
-                      </div>
-
-                    </div>
-                  </div>
+                  {/* Extracted data summary hidden per user request */}
 
                   {/* Navigation Button */}
                   <div className="flex flex-col sm:flex-row gap-4">
