@@ -159,7 +159,7 @@ export default function Survey() {
   };
 
   const handleNext = () => {
-    if (activeTab < 6) {
+    if (activeTab < 4) {
       setActiveTab(activeTab + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -203,8 +203,6 @@ export default function Survey() {
   };
 
   const SECTIONS = [
-    { label: "Personal Info", icon: User },
-    { label: "PNC License", icon: ShieldCheck },
     { label: "Career & Salary", icon: Briefcase },
     { label: "Availability", icon: Globe },
     { label: "Safety / Wellbeing", icon: Heart },
@@ -286,319 +284,15 @@ export default function Survey() {
                     Section {activeTab + 1}: {SECTIONS[activeTab].label}
                   </h2>
                   <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-2.5 rounded-full">
-                    {activeTab + 1} / 7
+                     {activeTab + 1} / 5
                   </span>
                 </div>
 
                 {/* FIELDS RENDERED BY STEPS */}
                 <div className="space-y-6">
                   
-                  {/* STEP 0: Personal Information */}
-                  {activeTab === 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Full Legal Name *</label>
-                        <input
-                          type="text"
-                          value={formData.fullName}
-                          onChange={(e) => handleFieldChange("fullName", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="As on passport"
-                        />
-                      </div>
-                      
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Email Address *</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => handleFieldChange("email", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="nurse@gmail.com"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Phone / Mobile Number *</label>
-                        <input
-                          type="text"
-                          value={formData.phone}
-                          onChange={(e) => handleFieldChange("phone", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="+92 300 1234567"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Date of Birth</label>
-                        <input
-                          type="date"
-                          value={formData.dob}
-                          onChange={(e) => handleFieldChange("dob", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Age</label>
-                        <input
-                          type="number"
-                          value={formData.age}
-                          disabled
-                          className="w-full font-sans text-sm border border-gray-100 bg-gray-50 text-gray-500 rounded-xl py-3 px-4 focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Gender</label>
-                        <select
-                          value={formData.gender}
-                          onChange={(e) => handleFieldChange("gender", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Female</option>
-                          <option>Male</option>
-                          <option>Other</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Nationality</label>
-                        <input
-                          type="text"
-                          value={formData.nationality}
-                          onChange={(e) => handleFieldChange("nationality", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Province of Domicile</label>
-                        <select
-                          value={formData.domicile}
-                          onChange={(e) => handleFieldChange("domicile", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Punjab</option>
-                          <option>Sindh</option>
-                          <option>Khyber Pakhtunkhwa (KPK)</option>
-                          <option>Balochistan</option>
-                          <option>Gilgit Baltistan</option>
-                          <option>Azad Jammu & Kashmir (AJK)</option>
-                          <option>Islamabad Capital Territory</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Religion</label>
-                        <input
-                          type="text"
-                          value={formData.religion}
-                          onChange={(e) => handleFieldChange("religion", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Marital Status</label>
-                        <select
-                          value={formData.maritalStatus}
-                          onChange={(e) => handleFieldChange("maritalStatus", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Single</option>
-                          <option>Married</option>
-                          <option>Divorced</option>
-                          <option>Widowed</option>
-                        </select>
-                      </div>
-
-                      <div className="col-span-1 md:col-span-2 space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Residential Address *</label>
-                        <textarea
-                          rows={2}
-                          value={formData.address}
-                          onChange={(e) => handleFieldChange("address", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="Your complete residential address"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5 border-t border-gray-50 pt-4 col-span-1 md:col-span-2">
-                        <h4 className="font-sans font-bold text-xs text-gray-400 tracking-wider uppercase mb-2">Next of Kin Details</h4>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Next of Kin Full Name</label>
-                        <input
-                          type="text"
-                          value={formData.nextOfKin}
-                          onChange={(e) => handleFieldChange("nextOfKin", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="Emergency Contact Name"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Relationship</label>
-                        <select
-                          value={formData.nextOfKinRelation}
-                          onChange={(e) => handleFieldChange("nextOfKinRelation", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Parent</option>
-                          <option>Spouse</option>
-                          <option>Sibling</option>
-                          <option>Child</option>
-                          <option>Other</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Next of Kin Phone</label>
-                        <input
-                          type="text"
-                          value={formData.nextOfKinPhone}
-                          onChange={(e) => handleFieldChange("nextOfKinPhone", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="Emergency contact number"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* STEP 1: PNC Credentials */}
-                  {activeTab === 1 && (
-                    <div className="space-y-6">
-                      <PncOcrScanner 
-                        currentLicenseNumber={formData.licenseNumber}
-                        currentExpiryDate={formData.expiryDate}
-                        onUpdateFields={({ licenseNumber, expiryDate }) => {
-                          if (licenseNumber) handleFieldChange("licenseNumber", licenseNumber);
-                          if (expiryDate) handleFieldChange("expiryDate", expiryDate);
-                        }}
-                      />
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">PNC License / Reg Number *</label>
-                          <input
-                            type="text"
-                            value={formData.licenseNumber}
-                            onChange={(e) => handleFieldChange("licenseNumber", e.target.value)}
-                            className="w-full font-sans text-sm font-mono border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 focus:font-bold text-blue-600"
-                            placeholder="PNC-XXXXX-N"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Issuing Nursing Council</label>
-                          <input
-                            type="text"
-                            value={formData.councilName}
-                            onChange={(e) => handleFieldChange("councilName", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">License Category</label>
-                          <select
-                            value={formData.category}
-                            onChange={(e) => handleFieldChange("category", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          >
-                            <option>Registered Nurse (RN)</option>
-                            <option>Registered Nurse Midwife (RM)</option>
-                            <option>Licensed Practical Nurse (LPN)</option>
-                            <option>Lady Health Visitor (LHV)</option>
-                            <option>Nurse Educator</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">PNC Verification Status</label>
-                          <select
-                            value={formData.verificationStatus}
-                            onChange={(e) => handleFieldChange("verificationStatus", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          >
-                            <option>Active</option>
-                            <option>Pending renewal</option>
-                            <option>Suspended</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Issue Date</label>
-                          <input
-                            type="date"
-                            value={formData.issueDate}
-                            onChange={(e) => handleFieldChange("issueDate", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Expiry Date</label>
-                          <input
-                            type="date"
-                            value={formData.expiryDate}
-                            onChange={(e) => handleFieldChange("expiryDate", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          />
-                        </div>
-
-                        <div className="col-span-1 md:col-span-2 space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Academic & Nursing Qualifications</label>
-                          <input
-                            type="text"
-                            value={formData.additionalQualifications}
-                            onChange={(e) => handleFieldChange("additionalQualifications", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                            placeholder="e.g. 4-Year BScN / General Nursing Diploma"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Nursing Institute / College Name</label>
-                          <input
-                            type="text"
-                            value={formData.nursingSchool}
-                            onChange={(e) => handleFieldChange("nursingSchool", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                            placeholder="e.g. Dow College of Nursing"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Year of Graduation</label>
-                          <input
-                            type="number"
-                            value={formData.graduationYear}
-                            onChange={(e) => handleFieldChange("graduationYear", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="block font-sans text-xs font-bold text-gray-700">Physical PNC Card is present?</label>
-                          <select
-                            value={formData.pncCardPresent}
-                            onChange={(e) => handleFieldChange("pncCardPresent", e.target.value)}
-                            className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          >
-                            <option>Yes</option>
-                            <option>No (Only e-license)</option>
-                            <option>Lost (Applied for duplicate)</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* STEP 2: Employment & Income */}
-                  {activeTab === 2 && (
+                  {activeTab === 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
                         <label className="block font-sans text-xs font-bold text-gray-700">Current / Last Employer</label>
@@ -728,7 +422,7 @@ export default function Survey() {
                   )}
 
                   {/* STEP 3: Availability */}
-                  {activeTab === 3 && (
+                  {activeTab === 1 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
                         <label className="block font-sans text-xs font-bold text-gray-700">Ready to relocate internationally? *</label>
@@ -859,7 +553,7 @@ export default function Survey() {
                   )}
 
                   {/* STEP 4: Safety & Wellbeing */}
-                  {activeTab === 4 && (
+                  {activeTab === 2 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
                         <label className="block font-sans text-xs font-bold text-gray-700">Any active safety/wellbeing concerns?</label>
@@ -955,7 +649,7 @@ export default function Survey() {
                   )}
 
                   {/* STEP 5: App Viability */}
-                  {activeTab === 5 && (
+                  {activeTab === 3 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-1.5">
                         <label className="block font-sans text-xs font-bold text-gray-700">Passport Validity Check</label>
@@ -1053,7 +747,7 @@ export default function Survey() {
                   )}
 
                   {/* STEP 6: Final Remarks */}
-                  {activeTab === 6 && (
+                  {activeTab === 4 && (
                     <div className="space-y-6">
                       <div className="space-y-1.5">
                         <label className="block font-sans text-xs font-bold text-gray-700">How did you hear about our portal?</label>
@@ -1121,7 +815,7 @@ export default function Survey() {
                     <span>Previous</span>
                   </button>
 
-                  {activeTab < 6 ? (
+                  {activeTab < 4 ? (
                     <button
                       onClick={handleNext}
                       className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-5 rounded-xl font-sans text-sm font-bold shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-98"
