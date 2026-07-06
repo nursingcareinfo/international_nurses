@@ -71,7 +71,7 @@ create index if not exists idx_nursing_applications_created_at
 -- ==========================================
 -- 3. EVALUATION VIEW (one row per nurse, SQL Editor friendly)
 -- ==========================================
-create or replace view public.survey_answers_flat as
+create or replace view public.survey_answers_flat with (security_invoker = true) as
 select
     na.id as application_id,
     na.full_name,
