@@ -4,9 +4,19 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  const BUILD_ID = Date.now().toString(36);
   return {
     base: "/international_nurses/",
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: "build-id",
+        transformIndexHtml(html) {
+          return html.replace("</head>", `<!-- build:${BUILD_ID} -->\n</head>`);
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
