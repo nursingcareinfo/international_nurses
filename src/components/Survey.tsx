@@ -1,159 +1,74 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import { 
-  CheckCircle, 
-  ArrowLeft, 
-  ArrowRight, 
-  Save, 
-  User, 
-  ShieldCheck, 
-  Briefcase, 
-  Globe, 
-  Heart, 
-  HelpCircle, 
-  FileCheck, 
-  Home 
-} from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { CheckCircle, ArrowLeft, ArrowRight, Save, Briefcase, Globe, Heart, HelpCircle, FileCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { callEdgeFunction, supabase } from "../lib/supabase";
-import PncOcrScanner from "./PncOcrScanner";
-
 
 export default function Survey() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Retrieve extracted data from location state or sessionStorage
   const [extractedData, setExtractedData] = useState<any>(null);
-
   useEffect(() => {
     let data = location.state?.extractedData;
     if (!data) {
       const stored = sessionStorage.getItem("extractedData");
       if (stored) {
-        try {
-          data = JSON.parse(stored);
-        } catch (_) {}
+        try { data = JSON.parse(stored); } catch (_) {}
       }
     }
-    if (data) {
-      setExtractedData(data);
-    }
+    if (data) setExtractedData(data);
   }, [location.state]);
 
   const extractedName = extractedData?.extractedName || "Candidate Nurse";
 
-  // Active step of the survey
   const [activeTab, setActiveTab] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form Fields State
   const [formData, setFormData] = useState({
-    // Section 1: Personal Information
-    fullName: "",
-    email: "",
-    phone: "",
-    address: "",
-    dob: "1995-01-01",
-    age: "31",
-    gender: "Female",
-    nationality: "Pakistani",
-    domicile: "Punjab",
-    religion: "Islam",
-    maritalStatus: "Single",
-    nextOfKin: "",
-    nextOfKinRelation: "Parent",
-    nextOfKinPhone: "",
-
-    // Section 2: PNC Credentials
-    licenseNumber: "",
-    councilName: "Pakistan Nursing Council",
-    category: "Registered Nurse (RN)",
-    issueDate: "2020-05-15",
-    expiryDate: "2028-05-15",
-    verificationStatus: "Active",
-    additionalQualifications: "General Nursing and Midwifery",
-    nursingSchool: "",
-    graduationYear: "2019",
-    pncCardPresent: "Yes",
-
-    // Section 3: Employment & Income
-    currentEmployer: "",
-    jobTitle: "Staff Nurse",
-    department: "ICU / CCU",
-    experienceYears: "5",
-    monthlyIncome: "120,000 PKR",
-    incomeSource: "Govt Hospital Salary",
-    currentEmploymentStatus: "Full-Time",
-    hasPrivatePractice: "No",
-    totalOverseasExperience: "0",
-    workShiftType: "Rotational",
-
-    // Section 4: Availability
-    readyToRelocate: "Yes",
-    preferredCountry1: "United Kingdom",
-    preferredCountry2: "Saudi Arabia",
-    preferredCountry3: "United Arab Emirates",
-    earliestStartDate: "Within 3 Months",
-    requiresVisaSponsorship: "Yes",
-    travelingWithFamily: "No",
-    languageProficiency: "Urdu (Native), English (Professional)",
-    preferredHospitalType: "Public (NHS/Govt)",
-
-    // Section 5: Safety & Wellbeing
-    safetyConcerns: "No",
-    harassmentExperience: "No",
-    workplaceSafetyRating: "Good (4/5)",
-    supportGroupNeeds: "Yes",
-    wellnessProgramsInterest: "Yes",
-    peerMentorshipInterest: "Yes",
-    culturalTrainingNeed: "Yes",
-
-    // Section 6: App Viability
-    passportValidity: "Yes (More than 2 years)",
-    ieltsOetScore: "Not taken yet",
-    ieltsExamDate: "",
-    motivatorsForWorkingAbroad: "Higher income & supporting family back home",
-    financialSavingsTarget: "60-80%",
-    expectedRelocationAllowance: "Yes",
-    hasPendingVisaRefusals: "No",
-
-    // Section 7: Final Remarks
-    additionalInfo: "",
-    referralSource: "Social Media",
-    consentChecked: false,
+    vehicleTransport: "",
+    professionalQualification: "",
+    specialization: [] as string[],
+    totalYearsExperience: "",
+    homeCareExperience: "",
+    instituteName: "",
+    employmentStatus: "",
+    monthlyIncome: "",
+    supplementalIncome: "",
+    expectedShiftPay: "",
+    weeklyAvailability: "",
+    availableShifts: [] as string[],
+    travelWillingness: "",
+    transitionConsideration: "",
+    preferredPatientTypes: [] as string[],
+    comfortWorkingAlone: "",
+    challengesExperienced: [] as string[],
+    biggestFears: [] as string[],
+    saferWithPlatform: "",
+    describeIncident: "",
+    awareOfPlatform: "",
+    findWorkMethod: [] as string[],
+    marketViability: "",
+    featurePriorities: [] as string[],
+    wouldRecommend: "",
+    additionalComments: "",
+    followUpConsent: "",
+    privacyConsent: false,
   });
 
-  // Pre-populate fields with AI extracted data once available
-  useEffect(() => {
-    if (extractedData) {
-      setFormData((prev) => ({
-        ...prev,
-        fullName: prev.fullName || extractedData.extractedName || "",
-        email: prev.email || extractedData.extractedEmail || "",
-        phone: prev.phone || extractedData.extractedPhone || "",
-        address: prev.address || extractedData.extractedAddress || "",
-        licenseNumber: prev.licenseNumber || extractedData.extractedLicenseNumber || "",
-        additionalQualifications: extractedData.extractedEducation || prev.additionalQualifications || "",
-      }));
-    }
-  }, [extractedData]);
-
-  const handleFieldChange = (field: string, value: string | boolean) => {
+  const handleFieldChange = (field: string, value: any) => {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value };
-      
-      // Auto-calculate age if DOB changes
-      if (field === "dob" && typeof value === "string") {
-        try {
-          const birthYear = new Date(value).getFullYear();
-          const currentYear = new Date().getFullYear();
-          updated.age = String(currentYear - birthYear);
-        } catch (_) {}
+      if (field === "specialization" || field === "availableShifts" || field === "preferredPatientTypes" || field === "challengesExperienced" || field === "biggestFears" || field === "findWorkMethod" || field === "featurePriorities") {
+        const current = updated[field] as string[];
+        if (current.includes(value)) {
+          updated[field] = current.filter((v) => v !== value);
+        } else {
+          updated[field] = [...current, value];
+        }
       }
-
       return updated;
     });
   };
@@ -173,8 +88,8 @@ export default function Survey() {
   };
 
   const handleFormSubmit = async () => {
-    if (!formData.consentChecked) {
-      setError("Please check the consent checkbox to authorize processing your credentials.");
+    if (!formData.privacyConsent) {
+      setError("Please accept the data privacy statement before submitting.");
       return;
     }
 
@@ -183,10 +98,10 @@ export default function Survey() {
 
     try {
       const payload = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        licenseNumber: formData.licenseNumber,
+        fullName: extractedData?.extractedName || formData.instituteName || "Candidate Nurse",
+        email: extractedData?.extractedEmail || "",
+        phone: extractedData?.extractedPhone || "",
+        licenseNumber: extractedData?.extractedLicenseNumber || "",
         extractedData: extractedData || {},
         surveyData: formData,
       };
@@ -203,709 +118,429 @@ export default function Survey() {
   };
 
   const SECTIONS = [
-    { label: "Career & Salary", icon: Briefcase },
+    { label: "Background", icon: Briefcase },
     { label: "Availability", icon: Globe },
-    { label: "Safety / Wellbeing", icon: Heart },
-    { label: "App Viability", icon: HelpCircle },
-    { label: "Final Remarks", icon: FileCheck },
+    { label: "Preferences", icon: Heart },
+    { label: "Challenges", icon: HelpCircle },
+    { label: "Platform", icon: FileCheck },
   ];
+
+  const CheckboxGroup = ({ options, selected, onChange, name }: any) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {options.map((opt: string) => {
+        const checked = selected.includes(opt);
+        return (
+          <label key={opt} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer ${checked ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}>
+            <input
+              type="checkbox"
+              name={name}
+              checked={checked}
+              onChange={() => onChange(name, opt)}
+              className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-700">{opt}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+
+  const Select = ({ label, value, onChange, options, required, multiple }: any) => (
+    <div className="space-y-1.5">
+      <label className="block font-sans text-xs font-bold text-gray-700">{label} {required && <span className="text-red-500">*</span>}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(fieldNameFromLabel(label), multiple ? undefined : e.target.value)}
+        multiple={multiple}
+        className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
+      >
+        {options.map((opt: string) => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  const fieldNameFromLabel = (label: string) => {
+    const map: Record<string, string> = {
+      "Professional qualification": "professionalQualification",
+      "Total years of experience": "totalYearsExperience",
+      "Experience in home care nursing": "homeCareExperience",
+      "Current employment status": "employmentStatus",
+      "Average monthly income from primary employment (PKR)": "monthlyIncome",
+      "Do you currently earn any supplemental income from home nursing or private patients?": "supplementalIncome",
+      "If offered fair pay, how much would you expect per shift for home nursing?": "expectedShiftPay",
+      "How many hours per week are you available for home nursing work?": "weeklyAvailability",
+      "Are you willing to travel to patient homes outside your immediate area?": "travelWillingness",
+      "Would you consider transitioning to home nursing care as your primary employment?": "transitionConsideration",
+      "How comfortable are you working alone with patients at their home?": "comfortWorkingAlone",
+      "Would you feel safer working through a registered platform that verifies patient households, provides contracts, and offers emergency support?": "saferWithPlatform",
+      "Are you aware of any app or digital platform for home nursing in Pakistan?": "awareOfPlatform",
+      "How viable do you think a home nursing app is in Pakistan's current market?": "marketViability",
+      "Would you recommend such a platform to other nurses you know?": "wouldRecommend",
+      "May we contact you for a follow-up interview? (Compensated 30-minute call)": "followUpConsent",
+    };
+    return map[label] || label.toLowerCase().replace(/\s+/g, "_");
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
-      
-      {/* Dynamic Header */}
       <div className="bg-blue-600 text-white py-12 px-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <h1 className="font-sans text-3xl font-extrabold tracking-tight">
-              Placement Survey & Verification
-            </h1>
+            <h1 className="font-sans text-3xl font-extrabold tracking-tight">Home Nursing Placement Survey</h1>
             <p className="font-sans text-blue-100 mt-2 text-sm md:text-base">
-              Welcome, <span className="font-bold text-white underline">{extractedName}</span>! Please complete the questionnaire to complete your profile.
+              Welcome, <span className="font-bold text-white underline">{extractedName}</span>! Please answer the questionnaire below.
             </p>
           </div>
-          <Link
-            to="/"
-            className="flex items-center gap-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white py-2 px-4 rounded-xl backdrop-blur-sm border border-white/10 transition-all shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Upload</span>
-          </Link>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-4 mt-8">
-        
         <AnimatePresence mode="wait">
-          
-          {/* STATE 1: SURVEY NOT SUBMITTED */}
           {!submitted ? (
-            <motion.div
-              key="survey-main"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start"
-            >
-              
-              {/* Sidebar Tabs */}
+            <motion.div key="survey-main" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl shadow-sm p-4 space-y-1.5">
-                <span className="block font-sans text-[10px] font-bold text-gray-400 tracking-widest uppercase px-3 mb-2">
-                  Survey Sections
-                </span>
-                
+                <span className="block font-sans text-[10px] font-bold text-gray-400 tracking-widest uppercase px-3 mb-2">Survey Sections</span>
                 {SECTIONS.map((sec, idx) => {
                   const Icon = sec.icon;
                   const isActive = idx === activeTab;
                   return (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveTab(idx)}
-                      className={`w-full flex items-center gap-3 py-2.5 px-3.5 rounded-xl font-sans text-sm font-medium transition-colors cursor-pointer text-left ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 font-bold"
-                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
-                      id={`tab-${idx}`}
-                    >
-                      <Icon className={`h-4.5 w-4.5 ${isActive ? "text-blue-600" : "text-gray-400"}`} />
+                    <button key={idx} onClick={() => setActiveTab(idx)} className={`w-full flex items-center gap-3 py-2.5 px-3.5 rounded-xl font-sans text-sm font-medium ${isActive ? "bg-blue-50 text-blue-700" : "text-gray-600 hover:bg-gray-50"}`}>
+                      <Icon className={`h-4 w-4 ${isActive ? "text-blue-600" : "text-gray-400"}`} />
                       <span>{sec.label}</span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* Central Survey Panel */}
               <div className="lg:col-span-9 bg-white border border-gray-100 rounded-3xl shadow-md p-6 sm:p-10 space-y-8">
-                
-                {/* Section Title Banner */}
                 <div className="border-b border-gray-100 pb-4 flex justify-between items-center">
-                  <h2 className="font-sans text-xl font-extrabold text-gray-900 tracking-tight">
-                    Section {activeTab + 1}: {SECTIONS[activeTab].label}
-                  </h2>
-                  <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-2.5 rounded-full">
-                     {activeTab + 1} / 5
-                  </span>
+                  <h2 className="font-sans text-xl font-extrabold text-gray-900 tracking-tight">{SECTIONS[activeTab].label}</h2>
+                  <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-2.5 rounded-full">{activeTab + 1} / 5</span>
                 </div>
 
-                {/* FIELDS RENDERED BY STEPS */}
                 <div className="space-y-6">
-                  
-                  {/* STEP 2: Employment & Income */}
                   {activeTab === 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Current / Last Employer</label>
-                        <input
-                          type="text"
-                          value={formData.currentEmployer}
-                          onChange={(e) => handleFieldChange("currentEmployer", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="Hospital or Clinic Name"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Current Job Title</label>
-                        <input
-                          type="text"
-                          value={formData.jobTitle}
-                          onChange={(e) => handleFieldChange("jobTitle", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Clinical Department / Specialty</label>
-                        <select
-                          value={formData.department}
-                          onChange={(e) => handleFieldChange("department", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>ICU / CCU</option>
-                          <option>Emergency Room (ER)</option>
-                          <option>Operation Theater (OT)</option>
-                          <option>Pediatrics</option>
-                          <option>Maternity / OB-GYN</option>
-                          <option>General Medicine / Surgical Ward</option>
-                          <option>Cardiology</option>
-                          <option>Oncology</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Professional qualification <span className="text-red-500">*</span></label>
+                        <select value={formData.professionalQualification} onChange={(e) => handleFieldChange("professionalQualification", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select qualification</option>
+                          <option>Diploma in General Nursing (GDN)</option>
+                          <option>Post RN BSN</option>
+                          <option>Bachelor of Science in Nursing (BSN)</option>
+                          <option>Master of Science in Nursing (MSN)</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Total Years of Clinical Experience</label>
-                        <input
-                          type="number"
-                          value={formData.experienceYears}
-                          onChange={(e) => handleFieldChange("experienceYears", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
+                        <label className="block font-sans text-xs font-bold text-gray-700">Specialization / Clinical area of practice <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={["General Nursing","ICU / CCU","Paediatrics","Orthopedics","Cardiac care","Post-surgical","Geriatric Care","Wound Care","Maternity / Midwife","Physiotherapy assist","Dialysis","Radiology","Infection Control"]} selected={formData.specialization} onChange={handleFieldChange} name="specialization" />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Current Monthly Income in Pakistan (PKR)</label>
-                        <input
-                          type="text"
-                          value={formData.monthlyIncome}
-                          onChange={(e) => handleFieldChange("monthlyIncome", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="e.g. 150,000 PKR"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Primary Source of Income</label>
-                        <select
-                          value={formData.incomeSource}
-                          onChange={(e) => handleFieldChange("incomeSource", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Govt Hospital Salary</option>
-                          <option>Private Hospital Salary</option>
-                          <option>Dual Salary (Govt + Private Evening)</option>
-                          <option>Home Nursing Practice</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Total years of experience <span className="text-red-500">*</span></label>
+                        <select value={formData.totalYearsExperience} onChange={(e) => handleFieldChange("totalYearsExperience", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select range</option>
+                          <option>Less than 1 year</option>
+                          <option>1 - 3 years</option>
+                          <option>3 - 5 years</option>
+                          <option>6 - 10 years</option>
+                          <option>More than 10 years</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Employment Status</label>
-                        <select
-                          value={formData.currentEmploymentStatus}
-                          onChange={(e) => handleFieldChange("currentEmploymentStatus", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Full-Time</option>
-                          <option>Part-Time</option>
-                          <option>Contractual</option>
-                          <option>Unemployed</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Experience in home care nursing <span className="text-red-500">*</span></label>
+                        <select value={formData.homeCareExperience} onChange={(e) => handleFieldChange("homeCareExperience", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select experience</option>
+                          <option>None - no prior home care</option>
+                          <option>Less than 1 year</option>
+                          <option>1 - 3 years</option>
+                          <option>3 - 5 years</option>
+                          <option>More than 5 years</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Private clinical home practice?</label>
-                        <select
-                          value={formData.hasPrivatePractice}
-                          onChange={(e) => handleFieldChange("hasPrivatePractice", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>No</option>
-                          <option>Yes (Part-Time)</option>
-                          <option>Yes (Primary)</option>
-                        </select>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Name of institute where currently or previously working <span className="text-red-500">*</span></label>
+                        <input type="text" value={formData.instituteName} onChange={(e) => handleFieldChange("instituteName", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500" placeholder="Hospital / clinic name" />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Prior Overseas Clinical Experience (Years)</label>
-                        <input
-                          type="number"
-                          value={formData.totalOverseasExperience}
-                          onChange={(e) => handleFieldChange("totalOverseasExperience", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Usual Work Shift Type</label>
-                        <select
-                          value={formData.workShiftType}
-                          onChange={(e) => handleFieldChange("workShiftType", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Rotational</option>
-                          <option>Day Only</option>
-                          <option>Night Only</option>
-                          <option>On-Call / Casual</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Current employment status <span className="text-red-500">*</span></label>
+                        <select value={formData.employmentStatus} onChange={(e) => handleFieldChange("employmentStatus", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select status</option>
+                          <option>Full-time employed at hospital / clinic</option>
+                          <option>Part-time employed at hospital / clinic</option>
+                          <option>Self-employed / Private practice</option>
+                          <option>Unemployed / Seeking placement</option>
                         </select>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 3: Availability */}
                   {activeTab === 1 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Ready to relocate internationally? *</label>
-                        <select
-                          value={formData.readyToRelocate}
-                          onChange={(e) => handleFieldChange("readyToRelocate", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 font-bold text-blue-600"
-                        >
-                          <option>Yes</option>
-                          <option>No</option>
-                          <option>Undecided</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Average monthly income from primary employment (PKR) <span className="text-red-500">*</span></label>
+                        <select value={formData.monthlyIncome} onChange={(e) => handleFieldChange("monthlyIncome", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select range</option>
+                          <option>Below Rs. 50,000</option>
+                          <option>Rs. 50,001 to 75,000</option>
+                          <option>Rs. 75,001 to 1,00,000</option>
+                          <option>Above Rs. 1,00,000</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Preferred Country (Choice 1)</label>
-                        <select
-                          value={formData.preferredCountry1}
-                          onChange={(e) => handleFieldChange("preferredCountry1", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>United Kingdom</option>
-                          <option>Saudi Arabia</option>
-                          <option>United Arab Emirates</option>
-                          <option>Ireland</option>
-                          <option>Germany</option>
-                          <option>Qatar</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Preferred Country (Choice 2)</label>
-                        <select
-                          value={formData.preferredCountry2}
-                          onChange={(e) => handleFieldChange("preferredCountry2", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Saudi Arabia</option>
-                          <option>United Arab Emirates</option>
-                          <option>United Kingdom</option>
-                          <option>Ireland</option>
-                          <option>Germany</option>
-                          <option>Qatar</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Preferred Country (Choice 3)</label>
-                        <select
-                          value={formData.preferredCountry3}
-                          onChange={(e) => handleFieldChange("preferredCountry3", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>United Arab Emirates</option>
-                          <option>Saudi Arabia</option>
-                          <option>United Kingdom</option>
-                          <option>Ireland</option>
-                          <option>Germany</option>
-                          <option>Qatar</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Earliest Relocation Date</label>
-                        <select
-                          value={formData.earliestStartDate}
-                          onChange={(e) => handleFieldChange("earliestStartDate", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Immediately</option>
-                          <option>Within 3 Months</option>
-                          <option>Within 6 Months</option>
-                          <option>Next Year</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Will you require Visa Sponsorship?</label>
-                        <select
-                          value={formData.requiresVisaSponsorship}
-                          onChange={(e) => handleFieldChange("requiresVisaSponsorship", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
+                        <label className="block font-sans text-xs font-bold text-gray-700">Do you currently earn any supplemental income from home nursing or private patients? <span className="text-red-500">*</span></label>
+                        <select value={formData.supplementalIncome} onChange={(e) => handleFieldChange("supplementalIncome", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
                           <option>Yes</option>
                           <option>No</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Traveling with dependent family members?</label>
-                        <select
-                          value={formData.travelingWithFamily}
-                          onChange={(e) => handleFieldChange("travelingWithFamily", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>No</option>
-                          <option>Yes (Spouse Only)</option>
-                          <option>Yes (Spouse and Children)</option>
-                          <option>Yes (Parents Only)</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">If offered fair pay, how much would you expect per shift for home nursing? <span className="text-red-500">*</span></label>
+                        <select value={formData.expectedShiftPay} onChange={(e) => handleFieldChange("expectedShiftPay", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select range</option>
+                          <option>Below Rs. 1,500 per shift</option>
+                          <option>Rs. 1,500 - 2,500 per 8-hour shift</option>
+                          <option>Rs. 2,500 - 3,500 per shift</option>
+                          <option>Above Rs. 3,500 per shift</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Preferred Hospital Structure</label>
-                        <select
-                          value={formData.preferredHospitalType}
-                          onChange={(e) => handleFieldChange("preferredHospitalType", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Public (NHS/Govt)</option>
-                          <option>Private Tertiary Hospital</option>
-                          <option>Military / Combined Military</option>
-                          <option>Specialist Day-Care Clinic</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">How many hours per week are you available for home nursing work? <span className="text-red-500">*</span></label>
+                        <select value={formData.weeklyAvailability} onChange={(e) => handleFieldChange("weeklyAvailability", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select availability</option>
+                          <option>Less than 10 hours per week</option>
+                          <option>10 to 20 hours per week (1-2 shifts)</option>
+                          <option>20 - 40 hours / week (3-5 shifts)</option>
+                          <option>Full time (40+ hours)</option>
+                          <option>Flexible - depends on the case</option>
                         </select>
                       </div>
 
-                      <div className="col-span-1 md:col-span-2 space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Language Proficiencies</label>
-                        <input
-                          type="text"
-                          value={formData.languageProficiency}
-                          onChange={(e) => handleFieldChange("languageProficiency", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="e.g. Urdu, English (IELTS Band 7)"
-                        />
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">Which shifts are you available for? (select all that apply) <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={["Morning (7 am - 3 pm)","Evening (3 pm - 11 pm)","Night (11 pm - 7 am)","Hourly / on call only"]} selected={formData.availableShifts} onChange={handleFieldChange} name="availableShifts" />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">Are you willing to travel to patient homes outside your immediate area? <span className="text-red-500">*</span></label>
+                        <select value={formData.travelWillingness} onChange={(e) => handleFieldChange("travelWillingness", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>Yes - within 5 km radius</option>
+                          <option>Yes - within 10 km radius</option>
+                          <option>Yes - citywide</option>
+                          <option>No</option>
+                        </select>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 4: Safety & Wellbeing */}
                   {activeTab === 2 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Any active safety/wellbeing concerns?</label>
-                        <select
-                          value={formData.safetyConcerns}
-                          onChange={(e) => handleFieldChange("safetyConcerns", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>No</option>
-                          <option>Yes (Workplace understaffing stress)</option>
-                          <option>Yes (Late-night commute safety)</option>
-                          <option>Yes (General physical strain)</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Would you consider transitioning to home nursing care as your primary employment? <span className="text-red-500">*</span></label>
+                        <select value={formData.transitionConsideration} onChange={(e) => handleFieldChange("transitionConsideration", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>Yes - I am actively looking to switch</option>
+                          <option>Yes - if income is equal to or better than hospital pay</option>
+                          <option>Maybe - need more information</option>
+                          <option>No - prefer hospital/clinic setting</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Experienced harassment at work?</label>
-                        <select
-                          value={formData.harassmentExperience}
-                          onChange={(e) => handleFieldChange("harassmentExperience", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>No</option>
-                          <option>Yes (Verbal abuse from patient relatives)</option>
-                          <option>Yes (Systemic bias)</option>
-                          <option>Prefer not to say</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">What type of patients would you prefer to work with? (select all that apply) <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={["Post-surgical recovery","Elderly / geriatric care","Cancer / palliative care","Critical / ICU-level care","Paediatric / newborn care","Mother and baby care","General assistance / ADLs"]} selected={formData.preferredPatientTypes} onChange={handleFieldChange} name="preferredPatientTypes" />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">How comfortable are you working alone with patients at their home? <span className="text-red-500">*</span></label>
+                        <select value={formData.comfortWorkingAlone} onChange={(e) => handleFieldChange("comfortWorkingAlone", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>1 - Not comfortable at all</option>
+                          <option>2</option>
+                          <option>3</option>
+                          <option>4</option>
+                          <option>5 - Very comfortable</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Current Workplace Safety Rating</label>
-                        <select
-                          value={formData.workplaceSafetyRating}
-                          onChange={(e) => handleFieldChange("workplaceSafetyRating", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Excellent (5/5)</option>
-                          <option>Good (4/5)</option>
-                          <option>Moderate (3/5)</option>
-                          <option>Poor (2/5)</option>
-                          <option>Critical (1/5)</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Need peer support groups abroad?</label>
-                        <select
-                          value={formData.supportGroupNeeds}
-                          onChange={(e) => handleFieldChange("supportGroupNeeds", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Yes</option>
-                          <option>No</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Interested in mental health programs?</label>
-                        <select
-                          value={formData.wellnessProgramsInterest}
-                          onChange={(e) => handleFieldChange("wellnessProgramsInterest", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Yes</option>
-                          <option>No</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Want Pakistani peer mentorship abroad?</label>
-                        <select
-                          value={formData.peerMentorshipInterest}
-                          onChange={(e) => handleFieldChange("peerMentorshipInterest", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Yes</option>
-                          <option>No</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Require cultural integration training?</label>
-                        <select
-                          value={formData.culturalTrainingNeed}
-                          onChange={(e) => handleFieldChange("culturalTrainingNeed", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Yes</option>
-                          <option>No</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Do you own a vehicle or have reliable transport? <span className="text-red-500">*</span></label>
+                        <select value={formData.vehicleTransport} onChange={(e) => handleFieldChange("vehicleTransport", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>YES! I own Motorcycle</option>
+                          <option>YES! I own a Car</option>
+                          <option>No I use public transport</option>
+                          <option>No i depend on family/relative</option>
                         </select>
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 5: App Viability */}
                   {activeTab === 3 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Passport Validity Check</label>
-                        <select
-                          value={formData.passportValidity}
-                          onChange={(e) => handleFieldChange("passportValidity", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Yes (More than 2 years)</option>
-                          <option>Yes (1-2 years remaining)</option>
-                          <option>No passport currently</option>
-                          <option>Expired (Under renewal)</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Have you experienced any of the following challenges in home nursing? (Select all that apply) <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={["Patients or family members behaving disrespectfully or making unreasonable demands","Delayed or non-payment by patients / agencies","Lack of proper equipment or supplies at the patient's home","Being asked to perform tasks beyond the agreed scope of care","Isolation — no colleague to consult during the shift"]} selected={formData.challengesExperienced} onChange={handleFieldChange} name="challengesExperienced" />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">What are your biggest fears or concerns about home nursing? (Select all that apply) <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={["Being blamed if a patient's condition worsens at home","No legal protection or formal employment contract","Personal safety, especially as a female nurse","Lack of emergency backup if patient deteriorates","No support channel if an emergency arose during the shift"]} selected={formData.biggestFears} onChange={handleFieldChange} name="biggestFears" />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">Would you feel safer working through a registered platform that verifies patient households, provides contracts, and offers emergency support? <span className="text-red-500">*</span></label>
+                        <select value={formData.saferWithPlatform} onChange={(e) => handleFieldChange("saferWithPlatform", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>Yes — it would significantly increase my confidence</option>
+                          <option>Maybe — depends on platform features</option>
+                          <option>No — I prefer traditional referrals</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">English Exam Status (IELTS / OET)</label>
-                        <select
-                          value={formData.ieltsOetScore}
-                          onChange={(e) => handleFieldChange("ieltsOetScore", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500 font-semibold"
-                        >
-                          <option>Not taken yet</option>
-                          <option>Cleared with IELTS (7.0+ overall)</option>
-                          <option>Cleared with OET (Grade B+)</option>
-                          <option>Booked exam date</option>
-                          <option>Failed (Planning to retake)</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Expected IELTS/OET Exam Date (If booked)</label>
-                        <input
-                          type="date"
-                          value={formData.ieltsExamDate}
-                          onChange={(e) => handleFieldChange("ieltsExamDate", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Primary motivator for moving abroad</label>
-                        <select
-                          value={formData.motivatorsForWorkingAbroad}
-                          onChange={(e) => handleFieldChange("motivatorsForWorkingAbroad", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Higher income & supporting family back home</option>
-                          <option>Professional hospital experience & career growth</option>
-                          <option>Better social safety & schooling for children</option>
-                          <option>Escaping workplace stress or local politics</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Target Monthly Savings Rate Abroad</label>
-                        <select
-                          value={formData.financialSavingsTarget}
-                          onChange={(e) => handleFieldChange("financialSavingsTarget", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>60-80%</option>
-                          <option>40-60%</option>
-                          <option>20-40%</option>
-                          <option>Unsure / All spent on living</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Do you expect relocation allowance from hospital?</label>
-                        <select
-                          value={formData.expectedRelocationAllowance}
-                          onChange={(e) => handleFieldChange("expectedRelocationAllowance", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Yes</option>
-                          <option>No (Self-funded relocation acceptable)</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Prior Visa Refusals for destination countries?</label>
-                        <select
-                          value={formData.hasPendingVisaRefusals}
-                          onChange={(e) => handleFieldChange("hasPendingVisaRefusals", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>No</option>
-                          <option>Yes (UK)</option>
-                          <option>Yes (Schengen/Europe)</option>
-                          <option>Yes (US/Canada)</option>
-                        </select>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Please describe any specific incident or concern in your own words <span className="text-red-500">*</span></label>
+                        <textarea value={formData.describeIncident} onChange={(e) => handleFieldChange("describeIncident", e.target.value)} rows={4} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500" placeholder="Optionally share a personal experience..." />
                       </div>
                     </div>
                   )}
 
-                  {/* STEP 6: Final Remarks */}
                   {activeTab === 4 && (
                     <div className="space-y-6">
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">How did you hear about our portal?</label>
-                        <select
-                          value={formData.referralSource}
-                          onChange={(e) => handleFieldChange("referralSource", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                        >
-                          <option>Social Media (Facebook/Instagram)</option>
-                          <option>LinkedIn</option>
-                          <option>PNC Official Newsletter</option>
-                          <option>Friend / Peer Recommendation</option>
-                          <option>WhatsApp Healthcare Group</option>
+                        <label className="block font-sans text-xs font-bold text-gray-700">Are you aware of any app or digital platform for home nursing in Pakistan? <span className="text-red-500">*</span></label>
+                        <select value={formData.awareOfPlatform} onChange={(e) => handleFieldChange("awareOfPlatform", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>Yes — I actively use one</option>
+                          <option>Yes — but I don't use it regularly</option>
+                          <option>No — I am not aware of any such platform</option>
+                          <option>Not yet</option>
                         </select>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="block font-sans text-xs font-bold text-gray-700">Additional Remarks or Special Notes</label>
-                        <textarea
-                          rows={4}
-                          value={formData.additionalInfo}
-                          onChange={(e) => handleFieldChange("additionalInfo", e.target.value)}
-                          className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500"
-                          placeholder="Detail any specific requests, references, or family situations..."
-                        />
+                        <label className="block font-sans text-xs font-bold text-gray-700">How do you currently find home nursing work? (Select all that apply) <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={["Through a nursing agency","WhatsApp groups","Hospital referral","Social media / online job boards","Word of mouth","Direct patient contact","Other"]} selected={formData.findWorkMethod} onChange={handleFieldChange} name="findWorkMethod" />
                       </div>
 
-                      {/* Error Banner */}
-                      {error && (
-                        <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 font-sans text-xs" id="survey-error">
-                          {error}
-                        </div>
-                      )}
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">How viable do you think a home nursing app is in Pakistan's current market? <span className="text-red-500">*</span></label>
+                        <select value={formData.marketViability} onChange={(e) => handleFieldChange("marketViability", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>1 - Not viable</option>
+                          <option>2</option>
+                          <option>3</option>
+                          <option>4</option>
+                          <option>5 - Very viable</option>
+                        </select>
+                      </div>
 
-                      {/* Consent checkbox */}
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">Which features would be most important to you as a nurse on such a platform? Rank your top 3 priorities. <span className="text-red-500">*</span></label>
+                        <CheckboxGroup options={[
+                          "Verified patient profiles and background-checked households",
+                          "Guaranteed and on-time payment after each shift",
+                          "Advance salary / emergency loan facility",
+                          "Shift management and scheduling via WhatsApp",
+                          "24/7 emergency support line during shifts",
+                          "Digital attendance and payslip record",
+                          "Ability to rate and review patients / families",
+                          "Legal contract for every assignment",
+                          "Training and CPD resources",
+                          "Option to set availability and decline unsuitable cases",
+                        ]} selected={formData.featurePriorities} onChange={handleFieldChange} name="featurePriorities" />
+                        <p className="text-xs text-gray-500">Please select up to 3.</p>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">Would you recommend such a platform to other nurses you know? <span className="text-red-500">*</span></label>
+                        <select value={formData.wouldRecommend} onChange={(e) => handleFieldChange("wouldRecommend", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>Yes — definitely</option>
+                          <option>Yes — happy to participate</option>
+                          <option>Maybe</option>
+                          <option>No — survey only</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">Is there anything else you would like us to know? <span className="text-red-500">*</span></label>
+                        <textarea value={formData.additionalComments} onChange={(e) => handleFieldChange("additionalComments", e.target.value)} rows={4} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500" placeholder="Your experience, expectations, or suggestions..." />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="block font-sans text-xs font-bold text-gray-700">May we contact you for a follow-up interview? (Compensated 30-minute call) <span className="text-red-500">*</span></label>
+                        <select value={formData.followUpConsent} onChange={(e) => handleFieldChange("followUpConsent", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
+                          <option value="">Select</option>
+                          <option>Yes — happy to participate</option>
+                          <option>No — survey only</option>
+                        </select>
+                      </div>
+
                       <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
-                        <input
-                          type="checkbox"
-                          id="consentChecked"
-                          checked={formData.consentChecked}
-                          onChange={(e) => handleFieldChange("consentChecked", e.target.checked)}
-                          className="h-4 w-4 mt-1 border-gray-300 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
-                        <label htmlFor="consentChecked" className="font-sans text-xs text-gray-600 leading-relaxed cursor-pointer select-none">
-                          I hereby consent to verify my PNC License and CV details with international hospital registries. I authorize Global Nurse Recruitment Portal to share my surveyed specialties with official medical sponsors in my preferred countries.
+                        <input type="checkbox" id="privacyConsent" checked={formData.privacyConsent} onChange={(e) => handleFieldChange("privacyConsent", e.target.checked)} className="h-4 w-4 mt-1 border-gray-300 rounded text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                        <label htmlFor="privacyConsent" className="font-sans text-xs text-gray-600 leading-relaxed cursor-pointer select-none">
+                          Data privacy & consent: By submitting this form you consent to Home Care App storing your responses for product research purposes. Your PNC license and CNIC numbers are collected solely for professional verification. No data will be shared with third parties or your employer. You may request deletion of your data at any time by contacting pkhomecareapp@gmail.com
                         </label>
                       </div>
                     </div>
                   )}
-
                 </div>
 
-                {/* Form Controls */}
                 <div className="border-t border-gray-100 pt-6 flex justify-between">
-                  <button
-                    onClick={handlePrev}
-                    disabled={activeTab === 0}
-                    className={`py-2.5 px-5 rounded-xl font-sans text-sm font-semibold border flex items-center gap-1.5 cursor-pointer ${
-                      activeTab === 0
-                        ? "border-gray-100 text-gray-300 cursor-not-allowed"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-98"
-                    }`}
-                  >
+                  <button onClick={handlePrev} disabled={activeTab === 0} className={`py-2.5 px-5 rounded-xl font-sans text-sm font-semibold border flex items-center gap-1.5 cursor-pointer ${activeTab === 0 ? "border-gray-100 text-gray-300 cursor-not-allowed" : "border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-98"}`}>
                     <ArrowLeft className="h-4 w-4" />
                     <span>Previous</span>
                   </button>
 
                   {activeTab < 4 ? (
-                    <button
-                      onClick={handleNext}
-                      className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-5 rounded-xl font-sans text-sm font-bold shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-98"
-                    >
+                    <button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 px-5 rounded-xl font-sans text-sm font-bold shadow-sm flex items-center gap-1.5 cursor-pointer active:scale-98">
                       <span>Next Section</span>
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   ) : (
-                    <button
-                      onClick={handleFormSubmit}
-                      disabled={submitting || !formData.consentChecked}
-                      className={`py-2.5 px-6 rounded-xl font-sans text-sm font-bold shadow-md flex items-center gap-2 cursor-pointer ${
-                        submitting || !formData.consentChecked
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg active:scale-98"
-                      }`}
-                      id="survey-submit-btn"
-                    >
+                    <button onClick={handleFormSubmit} disabled={submitting || !formData.privacyConsent} className={`py-2.5 px-6 rounded-xl font-sans text-sm font-bold shadow-md flex items-center gap-2 cursor-pointer ${submitting || !formData.privacyConsent ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700 hover:shadow-lg active:scale-98"}`} id="survey-submit-btn">
                       {submitting ? (
                         <>
-                          <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span>Submitting Profile...</span>
+                          <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                          <span>Submitting...</span>
                         </>
                       ) : (
                         <>
                           <Save className="h-4 w-4" />
-                          <span>Submit Combined Application</span>
+                          <span>Submit Application</span>
                         </>
                       )}
                     </button>
                   )}
                 </div>
-
               </div>
-
             </motion.div>
           ) : (
-            
-            // STATE 2: SURVEY SUBMITTED SUCCESSFULLY
-            <motion.div
-              key="success-splash"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="max-w-xl mx-auto bg-white border border-gray-100 rounded-3xl shadow-xl p-8 sm:p-12 text-center space-y-6"
-              id="submission-success-view"
-            >
-              <div className="bg-green-100 p-4 rounded-full text-green-600 inline-block">
-                <CheckCircle className="h-12 w-12" />
-              </div>
-              
-              <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight">
-                Profile Submitted!
-              </h2>
-              
-              <p className="font-sans text-sm text-gray-500 leading-relaxed">
-                Thank you, <span className="font-bold text-gray-800">{formData.fullName}</span>. Your Pakistan Nursing Council license credentials and placement preferences have been verified and securely recorded in our placement registry.
-              </p>
-
-              <div className="bg-gray-50 border border-gray-100 p-4 rounded-2xl text-left font-sans text-xs space-y-2">
-                <p className="font-bold text-gray-800">What happens next?</p>
-                <ol className="list-decimal list-inside space-y-1 text-gray-600">
-                  <li>Our compliance team will cross-verify your PNC License status.</li>
-                  <li>Sponsoring international hospitals will review your specialty experience.</li>
-                  <li>We will reach out via <span className="font-semibold text-gray-800">{formData.email}</span> with interview booking schedules.</li>
-                </ol>
-              </div>
-
+            <motion.div key="success-splash" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-xl mx-auto bg-white border border-gray-100 rounded-3xl shadow-xl p-8 sm:p-12 text-center space-y-6" id="submission-success-view">
+              <div className="bg-green-100 p-4 rounded-full text-green-600 inline-block"><CheckCircle className="h-12 w-12" /></div>
+              <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight">Profile Submitted!</h2>
+              <p className="font-sans text-sm text-gray-500 leading-relaxed">Thank you. Your home nursing application has been recorded. We will review your profile and contact you if there is a suitable placement or follow-up interview.</p>
               <div className="pt-4">
-                <button
-                  onClick={() => {
-                    setSubmitted(false);
-                    setActiveTab(0);
-                    // Reset name/email/phone defaults or leave as is
-                    navigate("/");
-                  }}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-2xl font-sans text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg"
-                >
-                  <Home className="h-4.5 w-4.5" />
+                <button onClick={() => { setSubmitted(false); setActiveTab(0); navigate("/"); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-2xl font-sans text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg">
+                  <ArrowLeft className="h-4.5 w-4.5" />
                   <span>Return to Home</span>
                 </button>
               </div>
             </motion.div>
           )}
-
         </AnimatePresence>
-
       </div>
     </div>
   );
