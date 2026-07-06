@@ -12,3 +12,7 @@ coverage/
 *.png
 *.pdf
 femalenurse/
+*.md
+!README.md
+!DESIGN.md
+live-upload-test.yml
