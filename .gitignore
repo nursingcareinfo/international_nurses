@@ -19,3 +19,4 @@ live-upload-test.yml
 .codegraph/
 crush.json
 your/
+trace.json
