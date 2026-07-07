@@ -16,7 +16,7 @@ const COUNTRIES = [
 export default function Countries() {
   return (
     <section className="py-16 bg-warm relative overflow-hidden">
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+      <div className="absolute inset-0 opacity-[0.12] pointer-events-none">
         <img
           src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80&auto=format"
           alt=""

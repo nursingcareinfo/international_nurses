@@ -187,7 +187,7 @@ export default function Hero() {
 
           {/* Action Interactive Panel */}
           <div className="lg:col-span-7 bg-[#faf8f5] p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
+            <div className="absolute inset-0 opacity-[0.12] pointer-events-none">
               <img
                 src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=80&auto=format"
                 alt=""
