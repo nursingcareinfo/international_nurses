@@ -15,8 +15,15 @@ const COUNTRIES = [
 
 export default function Countries() {
   return (
-    <section className="py-16 bg-warm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <section className="py-16 bg-warm relative overflow-hidden">
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+        <img
+          src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&q=80&auto=format"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
         <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl mb-4">
           Jobs in 10+ Countries
         </h2>

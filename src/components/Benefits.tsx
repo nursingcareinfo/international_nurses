@@ -49,7 +49,7 @@ export default function Benefits() {
           <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
             Why Apply For International Nursing Roles?
           </h2>
-          <p className="mt-4 font-sans text-lg text-gray-500">
+          <p className="mt-4 font-sans text-lg text-gray-500 text-center">
             Broaden your career horizons, support your family back in Pakistan, and make a massive global clinical impact.
           </p>
         </div>

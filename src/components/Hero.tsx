@@ -187,9 +187,9 @@ export default function Hero() {
 
           {/* Action Interactive Panel */}
           <div className="lg:col-span-7 bg-[#faf8f5] p-6 sm:p-10 rounded-3xl border border-gray-100 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
+            <div className="absolute inset-0 opacity-[0.06] pointer-events-none">
               <img
-                src="https://images.unsplash.com/photo-1502481851512-e9e2529bfbf9?w=800&q=80&auto=format"
+                src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1200&q=80&auto=format"
                 alt=""
                 className="w-full h-full object-cover"
               />
@@ -223,11 +223,11 @@ export default function Hero() {
                       onDrop={handlePncDrop}
                       onClick={() => pncInputRef.current?.click()}
                       className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] ${
-                        pncDragActive 
-                          ? "border-blue-500 bg-blue-50/50" 
-: pncFile
-                        ? "border-green-400 bg-green-50/10 hover:border-green-500"
-                        : "border-gray-200 bg-[#faf8f5] hover:border-blue-400 hover:bg-[#f5f2ed]"
+                        pncDragActive
+                          ? "border-blue-500 bg-blue-50/50"
+                          : pncFile
+                          ? "border-green-400 bg-green-50/10 hover:border-green-500"
+                          : "border-gray-200 bg-[#faf8f5] hover:border-blue-400 hover:bg-[#f5f2ed]"
                       }`}
                       id="pnc-dropzone"
                     >
@@ -277,11 +277,11 @@ export default function Hero() {
                       onDrop={handleCvDrop}
                       onClick={() => cvInputRef.current?.click()}
                       className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[140px] ${
-                        cvDragActive 
-                          ? "border-blue-500 bg-blue-50/50" 
-: cvFile
-                        ? "border-green-400 bg-green-50/10 hover:border-green-500"
-                        : "border-gray-200 bg-[#faf8f5] hover:border-blue-400 hover:bg-[#f5f2ed]"
+                        cvDragActive
+                          ? "border-blue-500 bg-blue-50/50"
+                          : cvFile
+                          ? "border-green-400 bg-green-50/10 hover:border-green-500"
+                          : "border-gray-200 bg-[#faf8f5] hover:border-blue-400 hover:bg-[#f5f2ed]"
                       }`}
                       id="cv-dropzone"
                     >
