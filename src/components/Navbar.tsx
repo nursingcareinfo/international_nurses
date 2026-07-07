@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Stethoscope, Menu, X, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { Stethoscope, Menu, X, LogOut, User as UserIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "./SupabaseProvider";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, signInWithGoogle, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -67,9 +67,9 @@ export default function Navbar() {
               Office Locations
             </button>
 
-            {/* Auth Desktop Integration */}
-            {user ? (
-              <div className="flex items-center gap-4 border-l border-gray-100 pl-4">
+             {/* Auth Desktop Integration */}
+             {user && (
+               <div className="flex items-center gap-4 border-l border-gray-100 pl-4">
                 <div className="flex items-center gap-2.5">
                   {user.photoURL ? (
                     <img
@@ -100,18 +100,10 @@ export default function Navbar() {
                   <LogOut className="h-3.5 w-3.5" />
                   <span>Sign Out</span>
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => signInWithGoogle()}
-                className="flex items-center gap-2 font-sans text-xs font-bold text-blue-600 bg-blue-50/80 hover:bg-blue-100 border border-blue-100/50 py-2 px-4 rounded-xl cursor-pointer transition-all"
-              >
-                <LogIn className="h-4 w-4" />
-                <span>Sign In with Google</span>
-              </button>
-            )}
-
-            <button
+               </div>
+             )}
+             
+             <button
               onClick={handleApplyClick}
               className="bg-blue-600 hover:bg-blue-700 text-white font-sans text-sm font-medium py-2.5 px-5 rounded-xl cursor-pointer transition-all hover:shadow-md"
               id="desktop-apply-btn"
@@ -162,7 +154,7 @@ export default function Navbar() {
                 Office Locations
               </button>
 
-              {user ? (
+              {user && (
                 <div className="border-t border-b border-gray-100 py-3 my-2 space-y-2">
                   <div className="flex items-center gap-3 px-3">
                     {user.photoURL ? (
@@ -196,21 +188,10 @@ export default function Navbar() {
                     <LogOut className="h-5 w-5 text-red-400" />
                     <span>Sign Out</span>
                   </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    signInWithGoogle();
-                    setIsOpen(false);
-                  }}
-                  className="flex w-full items-center gap-2 text-left font-sans text-base font-medium text-blue-600 hover:bg-blue-50 py-2.5 px-3 rounded-lg"
-                >
-                  <LogIn className="h-5 w-5 text-blue-500" />
-                  <span>Sign In with Google</span>
-                </button>
-              )}
-
-              <div className="pt-2">
+                 </div>
+               )}
+               
+               <div className="pt-2">
                 <button
                   onClick={handleApplyClick}
                   className="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-sans font-medium py-2.5 px-4 rounded-xl shadow-sm"
