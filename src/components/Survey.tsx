@@ -598,8 +598,8 @@ export default function Survey() {
           ) : (
             <motion.div key="success-splash" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="max-w-xl mx-auto bg-white border border-gray-100 rounded-3xl shadow-xl p-8 sm:p-12 text-center space-y-6" id="submission-success-view">
               <div className="bg-green-100 p-4 rounded-full text-green-600 inline-block"><CheckCircle className="h-12 w-12" /></div>
-              <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight">Profile Submitted!</h2>
-              <p className="font-sans text-sm text-gray-500 leading-relaxed">Thank you. Your home nursing application has been recorded. We will review your profile and contact you if there is a suitable placement or follow-up interview.</p>
+              <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight">Application Received! 🎉</h2>
+              <p className="font-sans text-sm text-gray-500 leading-relaxed">Your home nursing application has been received. We'll review your profile and contact you soon if there's a suitable placement or follow-up interview. ✨</p>
               <div className="pt-4">
                 <button onClick={() => { setSubmitted(false); setActiveTab(0); navigate("/"); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-2xl font-sans text-sm font-bold flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg">
                   <ArrowLeft className="h-4.5 w-4.5" />
