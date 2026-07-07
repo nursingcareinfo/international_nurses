@@ -111,7 +111,7 @@ using (true);
 -- ==========================================
 -- 4. ANALYTICS & RECRUITER REPORTING VIEWS
 -- ==========================================
-create or replace view public.recruiter_dashboard_view as
+create or replace view public.recruiter_dashboard_view with (security_invoker = on) as
 select 
     na.id as application_id,
     na.full_name,
