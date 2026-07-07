@@ -51,12 +51,14 @@ serve(async (req) => {
     const applicationId = appData.id;
 
     // 2. Insert into survey_responses
+    const now = new Date().toISOString();
     const { error: surveyErr } = await supabase
       .from("survey_responses")
       .insert({
         survey_data: surveyData || {},
         extracted_data: extractedData || {},
         application_id: applicationId,
+        submitted_at: now,
       });
 
     if (surveyErr) {

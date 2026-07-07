@@ -397,16 +397,103 @@ app.post("/api/submit-complete", async (req, res): Promise<any> => {
         if (appErr) throw appErr;
 
         if (appData) {
+          const now = new Date().toISOString();
+
           // 2. Insert into survey_responses
           const { error: surveyErr } = await supabase
             .from("survey_responses")
             .insert({
               survey_data: newSub.surveyData,
               extracted_data: newSub.extractedData,
-              application_id: appData.id
+              application_id: appData.id,
+              submitted_at: now
             });
 
           if (surveyErr) throw surveyErr;
+
+          // 3. Insert normalized survey_answers
+          const sd = newSub.surveyData || {};
+          const toArray = (v: unknown): string[] | null => {
+            if (Array.isArray(v)) return v.map(String);
+            if (typeof v === "string" && v.length > 0) return [v];
+            return null;
+          };
+
+          const { error: answersErr } = await supabase
+            .from("survey_answers")
+            .insert({
+              application_id: appData.id,
+              vehicle_transport: sd.vehicleTransport ?? null,
+              professional_qualification: sd.professionalQualification ?? null,
+              specialization: toArray(sd.specialization),
+              total_years_experience: sd.totalYearsExperience ?? null,
+              home_care_experience: sd.homeCareExperience ?? null,
+              institute_name: sd.instituteName ?? null,
+              employment_status: sd.employmentStatus ?? null,
+              monthly_income: sd.monthlyIncome ?? null,
+              supplemental_income: sd.supplementalIncome ?? null,
+              expected_shift_pay: sd.expectedShiftPay ?? null,
+              weekly_availability: sd.weeklyAvailability ?? null,
+              available_shifts: toArray(sd.availableShifts),
+              travel_willingness: sd.travelWillingness ?? null,
+              transition_consideration: sd.transitionConsideration ?? null,
+              preferred_patient_types: toArray(sd.preferredPatientTypes),
+              comfort_working_alone: sd.comfortWorkingAlone ?? null,
+              challenges_experienced: toArray(sd.challengesExperienced),
+              biggest_fears: toArray(sd.biggestFears),
+              safer_with_platform: sd.saferWithPlatform ?? null,
+              describe_incident: sd.describeIncident ?? null,
+              aware_of_platform: sd.awareOfPlatform ?? null,
+              find_work_method: toArray(sd.findWorkMethod),
+              market_viability: sd.marketViability ?? null,
+              feature_priorities: toArray(sd.featurePriorities),
+              would_recommend: sd.wouldRecommend ?? null,
+              additional_comments: sd.additionalComments ?? null,
+              follow_up_consent: sd.followUpConsent ?? null,
+            });
+
+          if (answersErr) throw answersErr;
+
+          // 4. Insert into pnc_license_data
+          const pncPayload: Record<string, unknown> = {
+            application_id: appData.id,
+            license_number: newSub.licenseNumber || newSub.extractedData?.extractedLicenseNumber || sd.licenseNumber || "",
+            council_name: sd.councilName || "Pakistan Nursing Council",
+            category: sd.category || null,
+            verification_status: sd.verificationStatus || "Active",
+            issue_date: sd.issueDate || null,
+            expiry_date: sd.expiryDate || null,
+            additional_qualifications: sd.additionalQualifications || null,
+            nursing_school: sd.nursingSchool || null,
+            graduation_year: sd.graduationYear ? parseInt(sd.graduationYear) : null,
+            pnc_card_present: sd.pncCardPresent || null,
+          };
+
+          const { error: pncErr } = await supabase
+            .from("pnc_license_data")
+            .insert(pncPayload);
+
+          if (pncErr) throw pncErr;
+
+          // 5. Insert into user_profiles
+          const profilePayload: Record<string, unknown> = {
+            application_id: appData.id,
+            full_name: newSub.fullName || newSub.extractedData?.extractedName || "",
+            email: newSub.email || newSub.extractedData?.extractedEmail || "",
+            phone: newSub.phone || newSub.extractedData?.extractedPhone || "",
+            address: sd.address || newSub.extractedData?.extractedAddress || "",
+            languages: sd.languageProficiency || newSub.extractedData?.extractedLanguages || "",
+            education: sd.additionalQualifications || newSub.extractedData?.extractedEducation || "",
+            experience: newSub.extractedData?.extractedExperience ||
+              `${sd.jobTitle || ""} at ${sd.currentEmployer || ""}`.trim() || null,
+            skills: newSub.extractedData?.extractedSkills || "Nursing Care",
+          };
+
+          const { error: profileErr } = await supabase
+            .from("user_profiles")
+            .insert(profilePayload);
+
+          if (profileErr) throw profileErr;
         }
       } catch (sbError: any) {
         console.warn("Could not sync with Supabase tables (perhaps tables are not created yet). Fallback to in-memory submission.", sbError.message);
