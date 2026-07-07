@@ -283,7 +283,7 @@ export default function Survey() {
       <div className="bg-blue-600 text-white py-12 px-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <h1 className="font-sans text-3xl font-extrabold tracking-tight">Home Nursing Placement Survey</h1>
+             <h1 className="font-sans text-3xl font-extrabold tracking-tight">Home Nursing Survey</h1>
             <p className="font-sans text-blue-100 mt-2 text-sm md:text-base">
               Welcome, <span className="font-bold text-white underline">{extractedName}</span>! Please answer the questionnaire below.
             </p>
@@ -319,7 +319,7 @@ export default function Survey() {
                       id="autofill-btn"
                     >
                       <Zap className="h-3.5 w-3.5" />
-                      <span>Auto-fill Viability Demo</span>
+                      <span>👉 AutoFill for help</span>
                     </button>
                     <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-2.5 rounded-full">{activeTab + 1} / 5</span>
                   </div>
