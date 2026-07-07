@@ -203,7 +203,7 @@ export default function Survey() {
       wouldRecommend: pick(["Yes — definitely","Yes — happy to participate","Maybe","No — survey only"]),
       additionalComments: randomComment(),
       followUpConsent: pick(["Yes — happy to participate","No — survey only"]),
-      privacyConsent: Math.random() > 0.3,
+      privacyConsent: true,
     });
     setTimeout(() => setActiveTab(4), 300);
   };
