@@ -488,6 +488,54 @@ app.all("/api/supabase/user", (req, res) => {
   handleFetchRoute(userHandler, req, res);
 });
 
+// 3. Admin Export Endpoint — returns all survey answers with names for evaluation
+// Requires x-api-key header matching SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY
+app.get("/api/admin/export-surveys", async (req, res): Promise<any> => {
+  const apiKey = req.headers["x-api-key"] as string;
+  const secretKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!secretKey || apiKey !== secretKey) {
+    return res.status(401).json({
+      error: "Unauthorized. Provide service_role key as x-api-key header. Set SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY in .env",
+    });
+  }
+
+  // Use our hardcoded new-project URL — dotenv doesn't override shell env vars
+  // which may still point to the old jobs_for_nurses project
+  const supabaseUrl = "https://ecxohbfvpmdgfiylkxpc.supabase.co";
+
+  try {
+    const supabase = createClient(supabaseUrl, secretKey, {
+      auth: { persistSession: false },
+    });
+
+    const nameFilter = (req.query.name as string || "")
+      .split(",")
+      .map((n) => n.trim().toLowerCase())
+      .filter(Boolean);
+
+    let query = supabase
+      .from("survey_answers_flat")
+      .select("*")
+      .order("submitted_at", { ascending: false });
+
+    if (nameFilter.length > 0) {
+      const or = nameFilter.map((n) => `full_name.ilike.%${n}%`).join(",");
+      query = query.or(or);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ success: true, count: data?.length || 0, records: data || [] });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || "Export failed." });
+  }
+});
+
 // Vite Middleware Setup
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
