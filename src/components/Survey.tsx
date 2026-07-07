@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle, ArrowLeft, ArrowRight, Save, Briefcase, Globe, Heart, HelpCircle, FileCheck } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight, Save, Briefcase, Globe, Heart, HelpCircle, FileCheck, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { callEdgeFunction, supabase } from "../lib/supabase";
 
@@ -116,6 +116,61 @@ export default function Survey() {
     }
   };
 
+  const handleAutoFill = () => {
+    setFormData({
+      // Background
+      professionalQualification: "Bachelor of Science in Nursing (BSN)",
+      specialization: ["ICU / CCU", "Cardiac care", "Post-surgical", "Geriatric Care"],
+      totalYearsExperience: "6 - 10 years",
+      homeCareExperience: "1 - 3 years",
+      instituteName: "Holy Family Hospital, Rawalpindi",
+      employmentStatus: "Full-time employed at hospital / clinic",
+      // Availability
+      monthlyIncome: "Rs. 75,001 to 1,00,000",
+      supplementalIncome: "Yes",
+      expectedShiftPay: "Rs. 2,500 - 3,500 per shift",
+      weeklyAvailability: "20 - 40 hours / week (3-5 shifts)",
+      availableShifts: ["Morning (7 am - 3 pm)", "Evening (3 pm - 11 pm)"],
+      travelWillingness: "Yes - citywide",
+      // Preferences
+      vehicleTransport: "YES! I own a Car",
+      transitionConsideration: "Yes - I am actively looking to switch",
+      preferredPatientTypes: ["Post-surgical recovery", "Elderly / geriatric care", "Critical / ICU-level care"],
+      comfortWorkingAlone: "4",
+      // Challenges
+      challengesExperienced: [
+        "Patients or family members behaving disrespectfully or making unreasonable demands",
+        "Delayed or non-payment by patients / agencies",
+        "Lack of proper equipment or supplies at the patient's home",
+        "Isolation — no colleague to consult during the shift",
+      ],
+      biggestFears: [
+        "No legal protection or formal employment contract",
+        "Personal safety, especially as a female nurse",
+        "Lack of emergency backup if patient deteriorates",
+      ],
+      saferWithPlatform: "Yes — it would significantly increase my confidence",
+      describeIncident:
+        "Several times I have faced delayed payment from private patients after completing home nursing shifts. A few households did not have basic supplies like gloves or sanitizer. A platform that verifies patients beforehand would make me feel much safer and more professional.",
+      // Platform
+      awareOfPlatform: "No — I am not aware of any such platform",
+      findWorkMethod: ["Through a nursing agency", "WhatsApp groups", "Hospital referral", "Word of mouth"],
+      marketViability: "5",
+      featurePriorities: [
+        "Verified patient profiles and background-checked households",
+        "Guaranteed and on-time payment after each shift",
+        "24/7 emergency support line during shifts",
+      ],
+      wouldRecommend: "Yes — definitely",
+      additionalComments:
+        "A home nursing platform with verified patients, guaranteed payment, and emergency support would be a game-changer for Pakistani nurses. Many of us want to do home care but are held back by safety concerns and payment issues. I would join such a platform immediately.",
+      followUpConsent: "Yes — happy to participate",
+      privacyConsent: true,
+    });
+    // Also auto-navigate to section 4 (Platform) so user can see it's filled and submit
+    setTimeout(() => setActiveTab(4), 300);
+  };
+
   const SECTIONS = [
     { label: "Background", icon: Briefcase },
     { label: "Availability", icon: Globe },
@@ -220,7 +275,17 @@ export default function Survey() {
               <div className="lg:col-span-9 bg-white border border-gray-100 rounded-3xl shadow-md p-6 sm:p-10 space-y-8">
                 <div className="border-b border-gray-100 pb-4 flex justify-between items-center">
                   <h2 className="font-sans text-xl font-extrabold text-gray-900 tracking-tight">{SECTIONS[activeTab].label}</h2>
-                  <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-2.5 rounded-full">{activeTab + 1} / 5</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleAutoFill}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
+                      id="autofill-btn"
+                    >
+                      <Zap className="h-3.5 w-3.5" />
+                      <span>Auto-fill Viability Demo</span>
+                    </button>
+                    <span className="font-mono text-xs font-semibold text-blue-600 bg-blue-50 py-1 px-2.5 rounded-full">{activeTab + 1} / 5</span>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
