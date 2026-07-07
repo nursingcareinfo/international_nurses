@@ -116,58 +116,95 @@ export default function Survey() {
     }
   };
 
+  const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+  const pickN = <T,>(arr: T[], min = 1, max?: number): T[] => {
+    const count = max !== undefined
+      ? Math.floor(Math.random() * (max - min + 1)) + min
+      : Math.floor(Math.random() * (arr.length - min + 1)) + min;
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, arr.length));
+  };
+
+  const randomHospital = () => pick([
+    "Holy Family Hospital, Rawalpindi",
+    "Jinnah Hospital, Lahore",
+    "Civil Hospital, Karachi",
+    "Services Hospital, Lahore",
+    "Liaquat National Hospital, Karachi",
+    "Shaukat Khanum Hospital, Lahore",
+    "Pakistan Institute of Medical Sciences, Islamabad",
+    "Lady Reading Hospital, Peshawar",
+    "Hayatabad Medical Complex, Peshawar",
+    "Bahawal Victoria Hospital, Bahawalpur",
+    "Nishtar Hospital, Multan",
+    "Combined Military Hospital, Rawalpindi",
+    "Aga Khan University Hospital, Karachi",
+    "Isra University Hospital, Hyderabad",
+    "Sindh Government Hospital, Karachi",
+  ]);
+
+  const randomIncident = () => pick([
+    "Several times I have faced delayed payment from private patients after completing home nursing shifts. A few households did not have basic supplies like gloves or sanitizer.",
+    "I once had to work without proper medical equipment at a patient's home. The family refused to provide even a basic blood pressure monitor.",
+    "A patient's family made unreasonable demands and became verbally abusive when I couldn't provide services outside my scope of practice.",
+    "I was left without transportation late at night after a shift. The patient's family offered no assistance despite knowing my situation.",
+    "During a home visit, I noticed unsafe living conditions for the patient but had no authority to report it to anyone in the moment.",
+    "I experienced isolation during multiple home shifts with no colleague nearby to consult during a critical patient moment.",
+    "A family requested me to administer medication without a valid prescription, creating a serious ethical and legal dilemma for me.",
+  ]);
+
+  const randomComment = () => pick([
+    "A home nursing platform with verified patients, guaranteed payment, and emergency support would be a game-changer for Pakistani nurses.",
+    "Many of us want to do home care but are held back by safety concerns and payment issues. I would join such a platform immediately.",
+    "If there was a proper system for background checks and legal contracts, I would feel much more confident taking home nursing assignments.",
+    "The biggest barriers are unreliable payments and lack of emergency backup. A good app could solve both of these problems.",
+    "I believe Pakistani nurses are ready for this kind of platform, but it needs strong verification and support systems to work.",
+    "Better pay transparency and shift scheduling would make home nursing much more attractive compared to hospital work.",
+  ]);
+
   const handleAutoFill = () => {
     setFormData({
-      // Background
-      professionalQualification: "Bachelor of Science in Nursing (BSN)",
-      specialization: ["ICU / CCU", "Cardiac care", "Post-surgical", "Geriatric Care"],
-      totalYearsExperience: "6 - 10 years",
-      homeCareExperience: "1 - 3 years",
-      instituteName: "Holy Family Hospital, Rawalpindi",
-      employmentStatus: "Full-time employed at hospital / clinic",
-      // Availability
-      monthlyIncome: "Rs. 75,001 to 1,00,000",
-      supplementalIncome: "Yes",
-      expectedShiftPay: "Rs. 2,500 - 3,500 per shift",
-      weeklyAvailability: "20 - 40 hours / week (3-5 shifts)",
-      availableShifts: ["Morning (7 am - 3 pm)", "Evening (3 pm - 11 pm)"],
-      travelWillingness: "Yes - citywide",
-      // Preferences
-      vehicleTransport: "YES! I own a Car",
-      transitionConsideration: "Yes - I am actively looking to switch",
-      preferredPatientTypes: ["Post-surgical recovery", "Elderly / geriatric care", "Critical / ICU-level care"],
-      comfortWorkingAlone: "4",
-      // Challenges
-      challengesExperienced: [
-        "Patients or family members behaving disrespectfully or making unreasonable demands",
-        "Delayed or non-payment by patients / agencies",
-        "Lack of proper equipment or supplies at the patient's home",
-        "Isolation — no colleague to consult during the shift",
-      ],
-      biggestFears: [
-        "No legal protection or formal employment contract",
-        "Personal safety, especially as a female nurse",
-        "Lack of emergency backup if patient deteriorates",
-      ],
-      saferWithPlatform: "Yes — it would significantly increase my confidence",
-      describeIncident:
-        "Several times I have faced delayed payment from private patients after completing home nursing shifts. A few households did not have basic supplies like gloves or sanitizer. A platform that verifies patients beforehand would make me feel much safer and more professional.",
-      // Platform
-      awareOfPlatform: "No — I am not aware of any such platform",
-      findWorkMethod: ["Through a nursing agency", "WhatsApp groups", "Hospital referral", "Word of mouth"],
-      marketViability: "5",
-      featurePriorities: [
+      professionalQualification: pick(["Diploma in General Nursing (GDN)", "Post RN BSN", "Bachelor of Science in Nursing (BSN)", "Master of Science in Nursing (MSN)"]),
+      specialization: pickN(["General Nursing","ICU / CCU","Paediatrics","Orthopedics","Cardiac care","Post-surgical","Geriatric Care","Wound Care","Maternity / Midwife","Physiotherapy assist","Dialysis","Radiology","Infection Control"], 1, 5),
+      totalYearsExperience: pick(["Less than 1 year","1 - 3 years","3 - 5 years","6 - 10 years","More than 10 years"]),
+      homeCareExperience: pick(["None - no prior home care","Less than 1 year","1 - 3 years","3 - 5 years","More than 5 years"]),
+      instituteName: randomHospital(),
+      employmentStatus: pick(["Full-time employed at hospital / clinic","Part-time employed at hospital / clinic","Self-employed / Private practice","Unemployed / Seeking placement"]),
+      monthlyIncome: pick(["Below Rs. 50,000","Rs. 50,001 to 75,000","Rs. 75,001 to 1,00,000","Above Rs. 1,00,000"]),
+      supplementalIncome: pick(["Yes", "No"]),
+      expectedShiftPay: pick(["Below Rs. 1,500 per shift","Rs. 1,500 - 2,500 per 8-hour shift","Rs. 2,500 - 3,500 per shift","Above Rs. 3,500 per shift"]),
+      weeklyAvailability: pick(["Less than 10 hours per week","10 to 20 hours per week (1-2 shifts)","20 - 40 hours / week (3-5 shifts)","Full time (40+ hours)","Flexible - depends on the case"]),
+      availableShifts: pickN(["Morning (7 am - 3 pm)","Evening (3 pm - 11 pm)","Night (11 pm - 7 am)","Hourly / on call only"], 1, 3),
+      travelWillingness: pick(["Yes - within 5 km radius","Yes - within 10 km radius","Yes - citywide","No"]),
+      transitionConsideration: pick(["Yes - I am actively looking to switch","Yes - if income is equal to or better than hospital pay","Maybe - need more information","No - prefer hospital/clinic setting"]),
+      preferredPatientTypes: pickN(["Post-surgical recovery","Elderly / geriatric care","Cancer / palliative care","Critical / ICU-level care","Paediatric / newborn care","Mother and baby care","General assistance / ADLs"], 1, 4),
+      comfortWorkingAlone: pick(["1 - Not comfortable at all","2","3","4","5 - Very comfortable"]),
+      vehicleTransport: pick(["YES! I own Motorcycle","YES! I own a Car","No I use public transport","No i depend on family/relative"]),
+      challengesExperienced: pickN(["Patients or family members behaving disrespectfully or making unreasonable demands","Delayed or non-payment by patients / agencies","Lack of proper equipment or supplies at the patient's home","Being asked to perform tasks beyond the agreed scope of care","Isolation — no colleague to consult during the shift"], 1, 4),
+      biggestFears: pickN(["Being blamed if a patient's condition worsens at home","No legal protection or formal employment contract","Personal safety, especially as a female nurse","Lack of emergency backup if patient deteriorates","No support channel if an emergency arose during the shift"], 1, 3),
+      saferWithPlatform: pick(["Yes — it would significantly increase my confidence","Maybe — depends on platform features","No — I prefer traditional referrals"]),
+      describeIncident: randomIncident(),
+      awareOfPlatform: pick(["Yes — I actively use one","Yes — but I don't use it regularly","No — I am not aware of any such platform","Not yet"]),
+      findWorkMethod: pickN(["Through a nursing agency","WhatsApp groups","Hospital referral","Social media / online job boards","Word of mouth","Direct patient contact","Other"], 1, 4),
+      marketViability: pick(["1 - Not viable","2","3","4","5 - Very viable"]),
+      featurePriorities: pickN([
         "Verified patient profiles and background-checked households",
         "Guaranteed and on-time payment after each shift",
+        "Advance salary / emergency loan facility",
+        "Shift management and scheduling via WhatsApp",
         "24/7 emergency support line during shifts",
-      ],
-      wouldRecommend: "Yes — definitely",
-      additionalComments:
-        "A home nursing platform with verified patients, guaranteed payment, and emergency support would be a game-changer for Pakistani nurses. Many of us want to do home care but are held back by safety concerns and payment issues. I would join such a platform immediately.",
-      followUpConsent: "Yes — happy to participate",
-      privacyConsent: true,
+        "Digital attendance and payslip record",
+        "Ability to rate and review patients / families",
+        "Legal contract for every assignment",
+        "Training and CPD resources",
+        "Option to set availability and decline unsuitable cases",
+      ], 1, 3),
+      wouldRecommend: pick(["Yes — definitely","Yes — happy to participate","Maybe","No — survey only"]),
+      additionalComments: randomComment(),
+      followUpConsent: pick(["Yes — happy to participate","No — survey only"]),
+      privacyConsent: Math.random() > 0.3,
     });
-    // Also auto-navigate to section 4 (Platform) so user can see it's filled and submit
     setTimeout(() => setActiveTab(4), 300);
   };
 
