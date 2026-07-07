@@ -129,13 +129,17 @@ export default function Survey() {
       {options.map((opt: string) => {
         const checked = selected.includes(opt);
         return (
-          <label key={opt} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer ${checked ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}>
+          <label
+            key={opt}
+            onClick={() => onChange(name, opt)}
+            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer ${checked ? "border-blue-500 bg-blue-50" : "border-gray-200 bg-white"}`}
+          >
             <input
               type="checkbox"
               name={name}
+              readOnly
               checked={checked}
-              onChange={() => onChange(name, opt)}
-              className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 pointer-events-none"
             />
             <span className="text-sm text-gray-700">{opt}</span>
           </label>
