@@ -162,13 +162,13 @@ export default function Hero() {
             <h1 className="font-sans text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl leading-tight">
               Apply For International Nursing Pathways
             </h1>
-            <p className="font-sans text-lg text-gray-500 leading-relaxed">
+            <p className="font-sans text-lg text-gray-600 leading-relaxed">
               Upload your Pakistan Nursing Council (PNC) license and CV to start your international nursing application.
             </p>
             
             <div className="border-l-4 border-blue-600 pl-4 py-1 space-y-1">
               <p className="font-sans text-sm font-semibold text-gray-900">Mandatory requirement:</p>
-              <p className="font-sans text-sm text-gray-500">PNC License (Image, PDF, DOCX, or Text file) is required for registration.</p>
+              <p className="font-sans text-sm text-gray-600">PNC License (Image, PDF, DOCX, or Text file) is required for registration.</p>
             </div>
             
             {/* Zero Cost Trust Badge */}
@@ -257,7 +257,7 @@ export default function Hero() {
                           <p className="font-sans text-sm font-bold text-gray-800">
                             Drag & drop or <span className="text-blue-600">browse</span>
                           </p>
-                          <p className="font-sans text-xs text-gray-400">
+                          <p className="font-sans text-xs text-gray-500">
                             Supported: PDF, Word Doc, Images, Text (Max 15MB)
                           </p>
                         </div>
@@ -310,7 +310,7 @@ export default function Hero() {
                           <p className="font-sans text-sm font-bold text-gray-800">
                             Drag & drop or <span className="text-blue-600">browse</span>
                           </p>
-                          <p className="font-sans text-xs text-gray-400">
+                          <p className="font-sans text-xs text-gray-500">
                             Supported: PDF, Word Doc, Images, Text (Max 15MB)
                           </p>
                         </div>
@@ -385,7 +385,7 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  <p className="font-sans text-sm text-gray-500 leading-relaxed">
+                  <p className="font-sans text-sm text-gray-600 leading-relaxed">
                     Your documents have been received. Click the button below to complete the placement survey.
                   </p>
 

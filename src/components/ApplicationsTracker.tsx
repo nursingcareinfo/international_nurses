@@ -75,7 +75,7 @@ export default function ApplicationsTracker() {
           <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl">
             My Registered Applications
           </h2>
-          <p className="font-sans text-base text-gray-500 mt-2">
+          <p className="font-sans text-base text-gray-600 mt-2">
             Securely track your credentials verification status, parsed CV elements, and overseas target matches.
           </p>
         </div>
@@ -92,7 +92,7 @@ export default function ApplicationsTracker() {
             </div>
             <div>
               <h3 className="font-sans font-bold text-lg text-gray-900">No Applications Found</h3>
-              <p className="font-sans text-sm text-gray-500 mt-1">
+              <p className="font-sans text-sm text-gray-600 mt-1">
                 You haven't completed any submissions under <strong>{user.email}</strong>. Use the uploader above to begin your application!
               </p>
             </div>

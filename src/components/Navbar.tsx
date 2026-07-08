@@ -87,7 +87,7 @@ export default function Navbar() {
                     <span className="font-sans text-xs font-semibold text-gray-900 leading-tight">
                       {user.displayName || "Nurse Profile"}
                     </span>
-                    <span className="font-sans text-[10px] text-gray-400">
+                    <span className="font-sans text-[10px] text-gray-500">
                       Authenticated
                     </span>
                   </div>

@@ -27,7 +27,7 @@ export default function Countries() {
         <h2 className="font-sans text-3xl font-extrabold text-gray-900 tracking-tight sm:text-4xl mb-4">
           Jobs in 10+ Countries
         </h2>
-        <p className="font-sans text-lg text-gray-500 mb-12 max-w-2xl mx-auto">
+        <p className="font-sans text-lg text-gray-600 mb-12 max-w-2xl mx-auto">
           We connect Pakistani nurses with healthcare employers across the globe.
         </p>
         <div className="flex flex-wrap justify-center gap-4">

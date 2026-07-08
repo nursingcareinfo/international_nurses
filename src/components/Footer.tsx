@@ -77,7 +77,7 @@ export default function Footer() {
         </div>
 
         {/* Divider & Copyright */}
-        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
           <p className="font-sans">
             &copy; {new Date().getFullYear()} Global Nurse Recruitment Portal. All rights reserved.
           </p>
