@@ -11,10 +11,12 @@ function LandingPage() {
   return (
     <>
       <Navbar />
-      <Hero />
-      <Countries />
-      <ApplicationsTracker />
-      <Benefits />
+      <main>
+        <Hero />
+        <Countries />
+        <ApplicationsTracker />
+        <Benefits />
+      </main>
       <Footer />
     </>
   );
