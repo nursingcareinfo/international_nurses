@@ -3,7 +3,7 @@ import mammoth from "npm:mammoth@1.6.0";
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const FETCH_TIMEOUT_MS = 30_000;
+const FETCH_TIMEOUT_MS = 45_000;
 const MAX_RETRIES = 2;
 
 const corsHeaders = {
@@ -90,14 +90,9 @@ function getMimeType(fileName: string): string {
   return "application/octet-stream";
 }
 
-function isTextFile(fileName: string): boolean {
-  const name = fileName.toLowerCase();
-  return name.endsWith(".txt") || name.endsWith(".csv") || name.endsWith(".json") || name.endsWith(".md");
-}
-
 const GEMINI_INSTRUCTION = `You are a precise data extraction engine for Pakistani nursing CVs and PNC license documents.
 
-Extract the fields below from the document text. Return ONLY a single JSON object — no markdown, no code fences, no greeting, no explanation.
+Extract the fields below from the document(s). Return ONLY a single JSON object — no markdown, no code fences, no greeting, no explanation.
 
 Expected output format (use these exact 10 keys, omit any field not found):
 {
@@ -117,10 +112,11 @@ Extraction rules:
 - Extract EXACT text from the document — do not paraphrase or summarize.
 - Omit any field completely if not found (do NOT include it with an empty string value).
 - For phone: always convert to international format starting with +92 for Pakistani numbers.
-- For PNC license: look for "PNC" followed by digits, or a registration number near "License"/"Licence"/"Reg No".
+- For PNC license: look for "PNC" followed by digits, or a registration number near "License"/"Licence"/"Reg No". Common formats: A-XXXXX, G-XXXXX, PK-S-XX-A-XXXXX.
 - For education: capture degree names like BSN, Post-RN, Diploma in Midwifery, MSc Nursing, etc.
 - For skills: capture specific clinical skills verbatim.
-- Scan tables, headers, footers, and all sections of the document.
+- Scan tables, headers, footers, and all sections of the document(s).
+- If you receive multiple files (e.g. a CV and a PNC card), merge the data from ALL files into ONE JSON output.
 - Return ONLY valid JSON. No markdown formatting, no code blocks, no extra text.`;
 
 const POLLINATIONS_URL = "https://text.pollinations.ai/openai/chat/completions";
@@ -133,7 +129,6 @@ async function extractDocxText(file: File): Promise<{ text: string; debug: Recor
     debug.fileSize = file.size;
     debug.fileName = file.name;
 
-    // Try mammoth
     try {
       const result = await mammoth.extractRawText({ buffer });
       debug.mammothChars = result.value?.length ?? 0;
@@ -144,7 +139,6 @@ async function extractDocxText(file: File): Promise<{ text: string; debug: Recor
       debug.mammothError = e.message;
     }
 
-    // Fallback: manual ZIP parse
     try {
       const view = new Uint8Array(buffer);
       const decoder = new TextDecoder();
@@ -169,7 +163,6 @@ async function extractDocxText(file: File): Promise<{ text: string; debug: Recor
 
         if (fileName === "word/document.xml") {
           const dataStart = offset + 30 + nameLen + extraLen;
-
           const xmlBytes = view.slice(dataStart, dataStart + compSize);
 
           if (compMethod === 0) {
@@ -230,85 +223,6 @@ async function extractDocxText(file: File): Promise<{ text: string; debug: Recor
   }
 }
 
-async function callAiWithText(text: string, debug?: Record<string, unknown>): Promise<Record<string, string> | null> {
-  const prompt = GEMINI_INSTRUCTION + "\n\nDocument content:\n" + text;
-
-  try {
-    const polliBody = { model: "openai", messages: [{ role: "user", content: prompt }], temperature: 0.1 };
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    const res = await fetch(POLLINATIONS_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(polliBody),
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (res.ok) {
-      const json = await res.json();
-      const content = json?.choices?.[0]?.message?.content;
-      if (content) {
-        debug && (debug.polliRaw = content.slice(0, 500));
-        const result = parseAnyJsonResponse(content);
-        if (result) return result;
-      }
-    } else {
-      debug && (debug.polliStatus = res.status);
-    }
-  } catch (e) {
-    debug && (debug.polliError = String(e));
-  }
-
-  const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) { debug && (debug.geminiError = "no api key"); return null; }
-
-  const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
-  };
-  debug && (debug.geminiBodyLen = JSON.stringify(body).length);
-
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-      const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error(`Gemini text API error (${res.status}): ${errText}`);
-        debug && (debug.geminiHttpStatus = res.status);
-        debug && (debug.geminiHttpBody = errText.slice(0, 500));
-        if (res.status === 429 && attempt < MAX_RETRIES) {
-          debug && (debug.geminiRetry = true);
-          await new Promise(r => setTimeout(r, 3000));
-          continue;
-        }
-        return null;
-      }
-      const result = await res.json();
-      const textContent = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (textContent) {
-        debug && (debug.geminiRaw = textContent.slice(0, 500));
-        return parseAnyJsonResponse(textContent);
-      }
-    } catch (err) {
-      console.error(`Gemini attempt ${attempt + 1} failed:`, err);
-      debug && (debug.geminiCatchError = String(err));
-      if (attempt < MAX_RETRIES) {
-        await new Promise(r => setTimeout(r, 1000));
-        continue;
-      }
-    }
-  }
-  return null;
-}
-
 function parseAnyJsonResponse(text: string): Record<string, string> | null {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return null;
@@ -340,75 +254,169 @@ function parseAnyJsonResponse(text: string): Record<string, string> | null {
   return null;
 }
 
-
-async function callGemini(file: File): Promise<Record<string, string> | null> {
-  const apiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!apiKey) return null;
-
-  const mimeType = getMimeType(file.name);
-
-  if (isTextFile(file.name)) {
-    const text = await file.text();
-    return await callAiWithText(text);
-  }
-
-  if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
-    const base64 = await fileToBase64(file);
-    const body = {
-      contents: [{ parts: [
-        { text: GEMINI_INSTRUCTION + "\n\nThis is a scanned document or image. Extract the requested fields from it. Return ONLY the JSON as specified above." },
-        { inlineData: { mimeType, data: base64 } },
-      ] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 4096 },
-    };
-
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-        const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-          signal: controller.signal,
-        });
-        clearTimeout(timer);
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error(`Gemini API error (${res.status}): ${errText}`);
-          if (res.status === 429 && attempt < MAX_RETRIES) {
-            await new Promise(r => setTimeout(r, 3000));
-            continue;
-          }
-          return null;
-        }
-        const result = await res.json();
-        const textContent = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (textContent) return parseAnyJsonResponse(textContent);
-      } catch (err) {
-        console.error(`Gemini attempt ${attempt + 1} failed:`, err);
-        if (attempt < MAX_RETRIES) {
-          await new Promise(r => setTimeout(r, 1000));
-          continue;
-        }
-      }
+/**
+ * Try Pollinations AI (free, no quota) for text-based extraction.
+ */
+async function callPollinations(prompt: string): Promise<Record<string, string> | null> {
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const res = await fetch(POLLINATIONS_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "openai",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (res.ok) {
+      const json = await res.json();
+      const content = json?.choices?.[0]?.message?.content;
+      if (content) return parseAnyJsonResponse(content);
     }
-    return null;
+  } catch (e) {
+    console.error("Pollinations AI error:", e);
   }
-
   return null;
 }
 
-function mergeData(entries: Array<Record<string, string>>): Record<string, string> {
-  const merged: Record<string, string> = {};
-  for (const entry of entries) {
-    for (const [key, value] of Object.entries(entry)) {
-      if (value && !merged[key]) {
-        merged[key] = value;
+/**
+ * Try Cloudflare Workers AI (free tier, vision-capable) for image/PDF analysis.
+ */
+async function callCloudflareAI(
+  files: Array<{ name: string; mimeType: string; base64: string }>,
+  prompt: string,
+): Promise<Record<string, string> | null> {
+  const cfAccountId = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+  const cfApiToken = Deno.env.get("CLOUDFLARE_API_TOKEN");
+  if (!cfAccountId || !cfApiToken) return null;
+
+  const model = "@cf/meta/llama-3.2-11b-vision-instruct";
+  const url = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`;
+
+  // For vision model, send each image separately and merge results
+  for (const file of files) {
+    try {
+      const dataUri = `data:${file.mimeType};base64,${file.base64}`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${cfApiToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          image: dataUri,
+          max_tokens: 2048,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (res.ok) {
+        const json = await res.json();
+        const text = json?.result?.description || json?.result?.response || "";
+        if (text) {
+          const parsed = parseAnyJsonResponse(text);
+          if (parsed) return parsed;
+        }
+      } else {
+        const errText = await res.text();
+        console.error(`Cloudflare AI error (${res.status}): ${errText}`);
+      }
+    } catch (e) {
+      console.error("Cloudflare AI error:", e);
+    }
+  }
+  return null;
+}
+
+/**
+ * Call Gemini API with a combined prompt + optional inline files.
+ * Sends ALL files in a SINGLE API call (saves quota).
+ */
+async function callGeminiCombined(
+  prompt: string,
+  files: Array<{ name: string; mimeType: string; base64: string }>,
+): Promise<{ result: Record<string, string> | null; rateLimited: boolean; _error?: string }> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) return { result: null, rateLimited: false };
+
+  const parts: any[] = [];
+
+  // Add each file as inline data
+  for (const file of files) {
+    parts.push({
+      inlineData: { mimeType: file.mimeType, data: file.base64 },
+    });
+  }
+
+  // Add the instruction prompt
+  parts.push({ text: prompt });
+
+  const body = {
+    contents: [{ parts }],
+    generationConfig: {
+      temperature: 0.1,
+      maxOutputTokens: 4096,
+    },
+  };
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+      const res = await fetch(`${GEMINI_API_URL}?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error(`Gemini API error (${res.status}): ${errText}`);
+
+        // Rate limited or overloaded — wait with exponential backoff
+        if (res.status === 429 || res.status === 503) {
+          const retryMatch = errText.match(/retry in (\d+(?:\.\d+)?)s/);
+          const delayMs = retryMatch ? Math.min(parseFloat(retryMatch[1]) * 1000 + 1000, 30000) : (res.status === 503 ? 3000 : 5000);
+          console.log(`Gemini ${res.status}, waiting ${delayMs}ms before retry ${attempt + 1}/${MAX_RETRIES + 1}`);
+          if (attempt < MAX_RETRIES) {
+            await new Promise(r => setTimeout(r, delayMs));
+            continue;
+          }
+          return { result: null, rateLimited: res.status === 429 };
+        }
+
+        // Non-retryable error
+        console.error("Gemini non-retryable error body:", errText.substring(0, 500));
+        return { result: null, rateLimited: false, _error: errText.substring(0, 500) };
+      }
+
+      const result = await res.json();
+      const textContent = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (textContent) {
+        const parsed = parseAnyJsonResponse(textContent);
+        if (parsed) return { result: parsed, rateLimited: false };
+      }
+      return { result: null, rateLimited: false };
+    } catch (err) {
+      console.error(`Gemini attempt ${attempt + 1} failed:`, err);
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 2000));
+        continue;
       }
     }
   }
-  return merged;
+
+  return { result: null, rateLimited: false };
 }
 
 Deno.serve(async (req: Request) => {
@@ -430,6 +438,7 @@ Deno.serve(async (req: Request) => {
 
     const warnings: string[] = [];
     const filesToProcess: Array<{ file: File; source: string }> = [];
+    let combinedText = "";
 
     for (const [key, file] of [["cv", cvFile], ["pnc", pncFile]] as const) {
       if (!file || file.size === 0) continue;
@@ -440,68 +449,100 @@ Deno.serve(async (req: Request) => {
       filesToProcess.push({ file, source: key });
     }
 
-    const geminiResults: Array<Record<string, string>> = [];
-    const textFallbacks: string[] = [];
-    const debugDocx: Record<string, unknown>[] = [];
+    let extractedData: Record<string, string> = {};
 
-    for (const { file, source } of filesToProcess) {
-      if (isTextFile(file.name)) {
-        textFallbacks.push(await file.text());
-      }
+    // ---------- STRATEGY 1: Try Gemini with ALL files in ONE call ----------
+    const geminiFiles: Array<{ name: string; mimeType: string; base64: string }> = [];
+    let hasDocx = false;
+    let docxTexts: string[] = [];
 
-      const isDocx = file.name.endsWith(".docx") || file.name.endsWith(".doc");
-      let docxDebug: Record<string, unknown> | undefined;
+    for (const { file } of filesToProcess) {
+      const mimeType = getMimeType(file.name);
 
-      if (isDocx) {
+      if (file.name.endsWith(".docx") || file.name.endsWith(".doc")) {
+        hasDocx = true;
         try {
-          const { text: docxText, debug } = await extractDocxText(file);
-          docxDebug = debug;
-          if (docxText) {
-            const geminiResult = await callAiWithText(docxText, docxDebug);
-            if (geminiResult && Object.keys(geminiResult).length > 0) {
-              geminiResults.push(geminiResult);
-            } else {
-              warnings.push(`Could not extract data from ${file.name}`);
-            }
-            docxDebug.geminiResult = geminiResult;
-            debugDocx.push(docxDebug);
-            continue;
-          }
+          const { text } = await extractDocxText(file);
+          if (text) docxTexts.push(`=== ${file.name} ===\n${text}`);
         } catch (e: any) {
-          docxDebug = { error: e.message, stack: e.stack };
+          warnings.push(`Could not read ${file.name}: ${e.message}`);
         }
       }
 
-      const geminiResult = await callGemini(file);
-      if (geminiResult && Object.keys(geminiResult).length > 0) {
-        geminiResults.push(geminiResult);
-      } else if (!isTextFile(file.name)) {
-        warnings.push(`Could not extract data from ${file.name}`);
+      // For PDF, images — prepare as inline data for Gemini vision
+      if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
+        try {
+          const base64 = await fileToBase64(file);
+          geminiFiles.push({ name: file.name, mimeType, base64 });
+        } catch (e: any) {
+          warnings.push(`Could not encode ${file.name}: ${e.message}`);
+        }
       }
-
-      if (isDocx && docxDebug) debugDocx.push(docxDebug);
     }
 
-    let extractedData: Record<string, string> = {};
-    if (geminiResults.length > 0) {
-      extractedData = mergeData(geminiResults);
+    // If we have DOCX text, add it to the prompt
+    let prompt = GEMINI_INSTRUCTION;
+    if (docxTexts.length > 0) {
+      prompt += "\n\n=== DOCUMENT TEXT ===\n" + docxTexts.join("\n\n");
+      combinedText = docxTexts.join("\n");
     }
-    if (Object.keys(extractedData).length === 0 && textFallbacks.length > 0) {
-      const combinedText = textFallbacks.join("\n---\n");
+
+    if (geminiFiles.length > 0 || docxTexts.length > 0) {
+      const { result, rateLimited, _error } = await callGeminiCombined(prompt, geminiFiles);
+      if (result && Object.keys(result).length > 0) {
+        extractedData = result;
+      } else if (rateLimited) {
+        warnings.push("AI extraction is currently rate-limited. Trying alternative extraction method...");
+      } else if (_error) {
+        warnings.push(`AI extraction error: ${_error}`);
+      } else {
+        warnings.push("AI extraction returned no data. Trying alternative method...");
+      }
+    }
+
+    // ---------- STRATEGY 2: Try Cloudflare Workers AI (vision-capable, free) ----------
+    if (Object.keys(extractedData).length === 0 && geminiFiles.length > 0) {
+      console.log("Gemini failed, trying Cloudflare Workers AI fallback...");
+      const cfResult = await callCloudflareAI(geminiFiles, GEMINI_INSTRUCTION);
+      if (cfResult && Object.keys(cfResult).length > 0) {
+        extractedData = cfResult;
+      }
+    }
+
+    // ---------- STRATEGY 3: Fallback to Pollinations AI (free, no quota, text-only) ----------
+    if (Object.keys(extractedData).length === 0 && combinedText) {
+      console.log("Gemini failed, trying Pollinations AI fallback...");
+      const polliResult = await callPollinations(
+        GEMINI_INSTRUCTION + "\n\nDocument content:\n" + combinedText,
+      );
+      if (polliResult && Object.keys(polliResult).length > 0) {
+        extractedData = polliResult;
+      }
+    }
+
+    // ---------- STRATEGY 4: Regex fallback for text content ----------
+    if (Object.keys(extractedData).length === 0 && combinedText) {
+      console.log("Pollinations failed, trying regex extraction...");
       extractedData = extractViaRegex(combinedText);
     }
 
-    const fileInfo = filesToProcess.map(f => ({ name: f.file.name, size: f.file.size, type: f.file.type, isDocx: f.file.name.endsWith(".docx") }));
-    const docxInfo = debugDocx.map(d => (typeof d === 'object' ? JSON.stringify(d).slice(0, 800) : String(d)));
+    // Report per-file warnings for files that weren't used
+    if (Object.keys(extractedData).length === 0 && filesToProcess.length > 0) {
+      warnings.push("Could not extract structured data from the uploaded files. Please ensure documents are clear and try again.");
+    }
+
+    const fileInfo = filesToProcess.map(f => ({
+      name: f.file.name,
+      size: f.file.size,
+      type: f.file.type,
+    }));
 
     return new Response(
       JSON.stringify({
         extractedData,
         warnings: warnings.length > 0 ? warnings : undefined,
-        _debugDocx: debugDocx.length > 0 ? debugDocx : undefined,
         _files: fileInfo,
-        _docxDebugRaw: docxInfo,
-        _version: "mammoth-v3",
+        _version: "combined-v1",
       }),
       { headers: corsHeaders },
     );
