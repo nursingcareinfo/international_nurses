@@ -507,6 +507,49 @@ app.post("/api/submit-complete", async (req, res): Promise<any> => {
   }
 });
 
+app.post("/api/analytics-track", async (req, res): Promise<any> => {
+  try {
+    const { event_name, platform, referrer, page, utm_source, utm_medium, utm_campaign, session_id, survey_id } = req.body;
+
+    if (!event_name) {
+      return res.status(400).json({ error: "event_name is required" });
+    }
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (supabaseUrl && supabaseKey && !supabaseKey.startsWith("sb_publishable_dummy")) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { error } = await supabase.from("analytics_events").insert({
+          event_name,
+          platform: platform || null,
+          referrer: referrer || null,
+          page: page || null,
+          utm_source: utm_source || null,
+          utm_medium: utm_medium || null,
+          utm_campaign: utm_campaign || null,
+          session_id: session_id || null,
+          survey_id: survey_id || null,
+          user_agent: req.headers["user-agent"] || null,
+          ip_address: req.headers["x-forwarded-for"] || req.headers["cf-connecting-ip"] || null,
+        });
+
+        if (error) {
+          console.warn("analytics-track Supabase insert failed:", error.message);
+        }
+      } catch (e: any) {
+        console.warn("analytics-track Supabase error:", e.message);
+      }
+    }
+
+    return res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error in analytics-track endpoint:", error);
+    return res.status(500).json({ error: error.message || "Analytics tracking failed." });
+  }
+});
+
 // Endpoint: get list of submissions (useful for debugging/testing in dev mode)
 app.get("/api/submissions", (req, res) => {
   res.json(submissionsDb);

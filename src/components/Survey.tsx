@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CheckCircle, ArrowLeft, ArrowRight, Save, Briefcase, Globe, Heart, HelpCircle, FileCheck, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { callEdgeFunction, supabase } from "../lib/supabase";
+import { track } from "../lib/analytics";
 
 export default function Survey() {
   const location = useLocation();
@@ -105,9 +106,10 @@ export default function Survey() {
         surveyData: formData,
       };
 
-      await callEdgeFunction("submit-complete", payload);
+      const result = await callEdgeFunction("submit-complete", payload);
       setSubmitted(true);
       sessionStorage.removeItem("extractedData");
+      track("survey_submit", { survey_id: result?.applicationId });
     } catch (err: any) {
       console.error("Submission failed:", err);
       setError(err.message || "An error occurred during submission. Please try again.");
@@ -283,7 +285,7 @@ export default function Survey() {
       <div className="bg-blue-600 text-white py-12 px-4 shadow-sm">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-             <h1 className="font-sans text-3xl font-extrabold tracking-tight">Home Nursing Survey</h1>
+             <h1 className="font-sans text-3xl font-extrabold tracking-tight">Global Nurses Recruiter</h1>
             <p className="font-sans text-blue-100 mt-2 text-sm md:text-base">
               Welcome, <span className="font-bold text-white underline">{extractedName}</span>! Please answer the questionnaire below.
             </p>
