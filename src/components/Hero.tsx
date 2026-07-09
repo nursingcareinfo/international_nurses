@@ -24,6 +24,9 @@ interface ExtractedData {
   extractedCertifications: string;
   extractedExperience: string;
   extractedSkills: string;
+  extractedTotalYearsExperience: string;
+  extractedLastHospital: string;
+  extractedGender: string;
 }
 
 export default function Hero() {
@@ -123,6 +126,23 @@ export default function Hero() {
       const licenseMatch = text.match(/(?:Registration|Reg|PNC|License|Licence)\s*(?:No|Number|#)?\s*:?\s*([A-Za-z0-9-]+)/i);
       if (licenseMatch) result.extractedLicenseNumber = licenseMatch[1].trim();
 
+      // Extract gender from honorifics
+      const genderMatch = text.match(/\b(Mr\.|Mrs\.|Ms\.|Male|Female)\b/i);
+      if (genderMatch) {
+        const g = genderMatch[1];
+        if (/^mr\.?$/i.test(g)) result.extractedGender = "Male";
+        else if (/^(mrs\.?|ms\.?)$/i.test(g)) result.extractedGender = "Female";
+        else result.extractedGender = g.charAt(0).toUpperCase() + g.slice(1).toLowerCase();
+      }
+
+      // Extract total years of experience
+      const expYearsMatch = text.match(/(\d+)\s*(?:\+|to\s*\d+)?\s*years?\s*(?:of\s+)?(?:experience|nursing|working)/i);
+      if (expYearsMatch) result.extractedTotalYearsExperience = expYearsMatch[0].trim();
+
+      // Extract last hospital name
+      const hospitalMatch = text.match(/(?:Hospital|Institute|Clinic)\s*:?\s*([A-Za-z\s.]+(?:Hospital|Institute|Clinic))/i);
+      if (hospitalMatch) result.extractedLastHospital = hospitalMatch[1].trim();
+
       return result;
     } catch (e) {
       console.warn("Client-side OCR failed:", e);
@@ -170,6 +190,9 @@ export default function Hero() {
             extractedCertifications: "",
             extractedExperience: "",
             extractedSkills: "",
+            extractedTotalYearsExperience: ocrData.extractedTotalYearsExperience || "",
+            extractedLastHospital: ocrData.extractedLastHospital || "",
+            extractedGender: ocrData.extractedGender || "",
           };
           setExtractedData(merged);
           sessionStorage.setItem("extractedData", JSON.stringify(merged));

@@ -23,6 +23,45 @@ export default function Survey() {
 
   const extractedName = extractedData?.extractedName || "Candidate Nurse";
 
+  // Auto-fill survey fields from extracted document data
+  useEffect(() => {
+    if (!extractedData) return;
+    setFormData(prev => {
+      const updates: Record<string, any> = {};
+
+      // Map total years experience from extracted data to dropdown option
+      if (extractedData.extractedTotalYearsExperience) {
+        const match = extractedData.extractedTotalYearsExperience.match(/\d+/);
+        if (match) {
+          const years = parseInt(match[0]);
+          if (years < 1) updates.totalYearsExperience = "Less than 1 year";
+          else if (years <= 3) updates.totalYearsExperience = "1 - 3 years";
+          else if (years <= 5) updates.totalYearsExperience = "3 - 5 years";
+          else if (years <= 10) updates.totalYearsExperience = "6 - 10 years";
+          else updates.totalYearsExperience = "More than 10 years";
+        }
+      }
+
+      // Auto-fill hospital name from extracted last hospital
+      if (extractedData.extractedLastHospital) {
+        updates.instituteName = extractedData.extractedLastHospital;
+      }
+
+      // Auto-fill transport based on gender
+      if (extractedData.extractedGender) {
+        const g = extractedData.extractedGender.toLowerCase().trim();
+        if (g === "male" || g === "m") {
+          updates.vehicleTransport = "YES! I own Motorcycle";
+        } else if (g === "female" || g === "f") {
+          updates.vehicleTransport = "No i depend on family/relative";
+        }
+      }
+
+      if (Object.keys(updates).length === 0) return prev;
+      return { ...prev, ...updates };
+    });
+  }, [extractedData]);
+
   const [activeTab, setActiveTab] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);

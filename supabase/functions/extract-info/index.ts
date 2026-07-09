@@ -67,6 +67,20 @@ function extractViaRegex(text: string): Record<string, string> {
   const certMatch = text.match(/(?:Certifications|certifications)\s*:\s*(.+)/);
   if (certMatch) data.extractedCertifications = certMatch[1].trim();
 
+  const expYearsMatch = text.match(/(?:Total Experience|total experience|years of experience|Years of Experience)\s*:?\s*(\d+\+?)/);
+  if (expYearsMatch) data.extractedTotalYearsExperience = expYearsMatch[1].trim();
+
+  const hospitalMatch = text.match(/(?:Hospital|hospital|Workplace|workplace|Institute|institute)\s*:?\s*(.+)/);
+  if (hospitalMatch) data.extractedLastHospital = hospitalMatch[1].trim();
+
+  const genderMatch = text.match(/\b(Mr\.|Mrs\.|Ms\.|Male|Female|male|female)\b/);
+  if (genderMatch) {
+    const g = genderMatch[1];
+    if (g === "Mr.") data.extractedGender = "Male";
+    else if (g === "Mrs." || g === "Ms.") data.extractedGender = "Female";
+    else data.extractedGender = g.charAt(0).toUpperCase() + g.slice(1).toLowerCase();
+  }
+
   return data;
 }
 
@@ -94,7 +108,7 @@ const GEMINI_INSTRUCTION = `You are a precise data extraction engine for Pakista
 
 Extract the fields below from the document(s). Return ONLY a single JSON object — no markdown, no code fences, no greeting, no explanation.
 
-Expected output format (use these exact 10 keys, omit any field not found):
+Expected output format (use these exact 13 keys, omit any field not found):
 {
   "name": "Full name of the nurse candidate",
   "email": "Email address",
@@ -105,7 +119,10 @@ Expected output format (use these exact 10 keys, omit any field not found):
   "education": "Educational qualifications (e.g. BSN, Post-RN, Diploma in Midwifery, MSc Nursing)",
   "experience": "Professional experience summary",
   "skills": "Clinical/technical skills (comma-separated, e.g. Patient Assessment, Wound Care, IV Therapy, NICU)",
-  "certifications": "Professional certifications (comma-separated, e.g. ACLS, BLS, PALS)"
+  "certifications": "Professional certifications (comma-separated, e.g. ACLS, BLS, PALS)",
+  "total_years_experience": "Total years of nursing experience as a number or range (e.g. 5, 8, 10+)",
+  "last_hospital": "Name of the last or current hospital the nurse works/worked at (e.g. Jinnah Hospital, Karachi)",
+  "gender": "Gender of the nurse: Male or Female"
 }
 
 Extraction rules:
@@ -115,6 +132,9 @@ Extraction rules:
 - For PNC license: look for "PNC" followed by digits, or a registration number near "License"/"Licence"/"Reg No". Common formats: A-XXXXX, G-XXXXX, PK-S-XX-A-XXXXX.
 - For education: capture degree names like BSN, Post-RN, Diploma in Midwifery, MSc Nursing, etc.
 - For skills: capture specific clinical skills verbatim.
+- For total_years_experience: extract the total nursing experience as a number or range (e.g. "5", "8", "10+"). Look for phrases like "years of experience", "total experience", "nursing experience".
+- For last_hospital: extract the name of the last or current hospital the nurse works/worked at, especially if located in Karachi. Look for "current hospital", "last hospital", "workplace", or hospital names in the CV.
+- For gender: determine if the nurse is Male or Female. Look for honorifics (Mr., Mrs., Ms., Dr.), pronouns, or explicitly stated gender.
 - Scan tables, headers, footers, and all sections of the document(s).
 - If you receive multiple files (e.g. a CV and a PNC card), merge the data from ALL files into ONE JSON output.
 - Return ONLY valid JSON. No markdown formatting, no code blocks, no extra text.`;
@@ -336,6 +356,9 @@ function parseAnyJsonResponse(text: string): Record<string, string> | null {
     if (parsed.experience) mapped.extractedExperience = String(parsed.experience);
     if (parsed.skills) mapped.extractedSkills = String(parsed.skills);
     if (parsed.certifications) mapped.extractedCertifications = String(parsed.certifications);
+    if (parsed.total_years_experience) mapped.extractedTotalYearsExperience = String(parsed.total_years_experience);
+    if (parsed.last_hospital) mapped.extractedLastHospital = String(parsed.last_hospital);
+    if (parsed.gender) mapped.extractedGender = String(parsed.gender);
     if (Object.keys(mapped).length > 0) return mapped;
   } catch {}
   return null;
