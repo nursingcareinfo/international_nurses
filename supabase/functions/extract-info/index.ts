@@ -223,6 +223,93 @@ async function extractDocxText(file: File): Promise<{ text: string; debug: Recor
   }
 }
 
+/**
+ * Extract embedded images from a DOCX file (ZIP archive).
+ * DOCX files can contain embedded screenshots in word/media/.
+ */
+async function extractDocxImages(
+  file: File,
+): Promise<Array<{ name: string; mimeType: string; base64: string }>> {
+  const images: Array<{ name: string; mimeType: string; base64: string }> = [];
+  try {
+    const buffer = await file.arrayBuffer();
+    const view = new Uint8Array(buffer);
+
+    // Simple ZIP central directory parser to find media files
+    let offset = 0;
+    while (offset < view.length - 30) {
+      if (view[offset] !== 0x50 || view[offset + 1] !== 0x4b ||
+          view[offset + 2] !== 0x03 || view[offset + 3] !== 0x04) {
+        offset++;
+        continue;
+      }
+
+      const nameLen = view[offset + 26] | (view[offset + 27] << 8);
+      const extraLen = view[offset + 28] | (view[offset + 29] << 8);
+      const compMethod = view[offset + 8] | (view[offset + 9] << 8);
+      const compSize = view[offset + 18] | (view[offset + 19] << 8) |
+                      (view[offset + 20] << 16) | (view[offset + 21] << 24);
+      const fileName = new TextDecoder().decode(view.slice(offset + 30, offset + 30 + nameLen));
+
+      if (fileName.startsWith("word/media/") && fileName.match(/\.(png|jpg|jpeg|gif|webp|bmp)$/i)) {
+        const dataStart = offset + 30 + nameLen + extraLen;
+        const fileBytes = view.slice(dataStart, dataStart + compSize);
+
+        let imageData: Uint8Array;
+        if (compMethod === 0) {
+          imageData = fileBytes;
+        } else if (compMethod === 8) {
+          try {
+            const ds = new DecompressionStream("deflate-raw");
+            const writer = ds.writable.getWriter();
+            writer.write(fileBytes);
+            writer.close();
+            const reader = ds.readable.getReader();
+            const chunks: Uint8Array[] = [];
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              chunks.push(value);
+            }
+            const totalLen = chunks.reduce((s, c) => s + c.byteLength, 0);
+            imageData = new Uint8Array(totalLen);
+            let pos = 0;
+            for (const c of chunks) { imageData.set(c, pos); pos += c.byteLength; }
+          } catch {
+            offset += 30 + nameLen + extraLen + compSize;
+            continue;
+          }
+        } else {
+          offset += 30 + nameLen + extraLen + compSize;
+          continue;
+        }
+
+        // Determine MIME type from extension
+        const ext = fileName.split(".").pop()?.toLowerCase() || "png";
+        const mimeMap: Record<string, string> = {
+          png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg",
+          gif: "image/gif", webp: "image/webp", bmp: "image/bmp",
+        };
+        const mimeType = mimeMap[ext] || "image/png";
+
+        // Convert binary to base64
+        let binary = "";
+        for (let i = 0; i < imageData.length; i++) {
+          binary += String.fromCharCode(imageData[i]);
+        }
+        const base64 = btoa(binary);
+
+        images.push({ name: fileName.split("/").pop() || fileName, mimeType, base64 });
+      }
+
+      offset += 30 + nameLen + extraLen + compSize;
+    }
+  } catch (e) {
+    console.error("Error extracting images from DOCX:", e);
+  }
+  return images;
+}
+
 function parseAnyJsonResponse(text: string): Record<string, string> | null {
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) return null;
@@ -285,6 +372,7 @@ async function callPollinations(prompt: string): Promise<Record<string, string> 
 
 /**
  * Try Cloudflare Workers AI (free tier, vision-capable) for image/PDF analysis.
+ * Tries multiple models in sequence: Llama vision, then Qwen OCR.
  */
 async function callCloudflareAI(
   files: Array<{ name: string; mimeType: string; base64: string }>,
@@ -294,43 +382,68 @@ async function callCloudflareAI(
   const cfApiToken = Deno.env.get("CLOUDFLARE_API_TOKEN");
   if (!cfAccountId || !cfApiToken) return null;
 
-  const model = "@cf/meta/llama-3.2-11b-vision-instruct";
-  const url = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`;
+  const models = [
+    "@cf/meta/llama-3.2-11b-vision-instruct",
+    "@cf/qwen/qwen-ocr",  // newer OCR model on Workers AI
+  ];
 
-  // For vision model, send each image separately and merge results
-  for (const file of files) {
-    try {
-      const dataUri = `data:${file.mimeType};base64,${file.base64}`;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${cfApiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          image: dataUri,
+  for (const model of models) {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/${model}`;
+
+    // Send each image separately and return on first success
+    for (const file of files) {
+      try {
+        const dataUri = `data:${file.mimeType};base64,${file.base64}`;
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+        // Use messages format for better instruction following
+        const body = JSON.stringify({
+          messages: [
+            {
+              role: "system",
+              content: "You are a precise OCR engine for Pakistan Nursing Council cards and nursing CVs. Extract structured data as JSON only.",
+            },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: dataUri } },
+              ],
+            },
+          ],
           max_tokens: 2048,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
+        });
 
-      if (res.ok) {
-        const json = await res.json();
-        const text = json?.result?.description || json?.result?.response || "";
-        if (text) {
-          const parsed = parseAnyJsonResponse(text);
-          if (parsed) return parsed;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${cfApiToken}`,
+            "Content-Type": "application/json",
+          },
+          body,
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+
+        if (res.ok) {
+          const json = await res.json();
+          // Different models return response in different fields
+          const text = json?.result?.response ||
+                       json?.result?.description ||
+                       (json?.result?.choices?.[0]?.message?.content) ||
+                       "";
+          if (text) {
+            const parsed = parseAnyJsonResponse(text);
+            if (parsed && Object.keys(parsed).length > 0) return parsed;
+          }
+        } else {
+          const errText = await res.text();
+          console.error(`Cloudflare AI ${model} error (${res.status}): ${errText.substring(0, 300)}`);
         }
-      } else {
-        const errText = await res.text();
-        console.error(`Cloudflare AI error (${res.status}): ${errText}`);
+      } catch (e) {
+        console.error(`Cloudflare AI ${model} error:`, e);
       }
-    } catch (e) {
-      console.error("Cloudflare AI error:", e);
     }
   }
   return null;
@@ -463,7 +576,19 @@ Deno.serve(async (req: Request) => {
         hasDocx = true;
         try {
           const { text } = await extractDocxText(file);
-          if (text) docxTexts.push(`=== ${file.name} ===\n${text}`);
+          if (text) {
+            docxTexts.push(`=== ${file.name} ===\n${text}`);
+          } else {
+            // DOCX with no extractable text (image-based) — extract embedded images
+            warnings.push(`${file.name} appears to be image-based (no selectable text). Extracting embedded images...`);
+            const docxImages = await extractDocxImages(file);
+            for (const img of docxImages) {
+              geminiFiles.push(img);
+            }
+            if (docxImages.length > 0) {
+              warnings.push(`Extracted ${docxImages.length} image(s) from ${file.name} for AI analysis.`);
+            }
+          }
         } catch (e: any) {
           warnings.push(`Could not read ${file.name}: ${e.message}`);
         }

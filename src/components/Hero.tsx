@@ -104,6 +104,32 @@ export default function Hero() {
     return <File className="h-8 w-8 text-gray-500" />;
   };
 
+  // Client-side OCR fallback using Tesseract.js (zero API keys needed)
+  const runClientOcr = async (file: File): Promise<Partial<ExtractedData>> => {
+    try {
+      const Tesseract = await import("tesseract.js");
+      const imgUrl = URL.createObjectURL(file);
+      const { data } = await Tesseract.recognize(imgUrl, "eng", {
+        logger: (m: any) => m.status === "recognizing text" && console.log(`OCR: ${Math.round(m.progress * 100)}%`),
+      });
+      URL.revokeObjectURL(imgUrl);
+      const text = data.text;
+      console.log("OCR text:", text.substring(0, 300));
+
+      const result: Partial<ExtractedData> = {};
+      const nameMatch = text.match(/(?:Name|NAME|name)\s*:?\s*([A-Za-z\s.]+)/);
+      if (nameMatch) result.extractedName = nameMatch[1].trim();
+
+      const licenseMatch = text.match(/(?:Registration|Reg|PNC|License|Licence)\s*(?:No|Number|#)?\s*:?\s*([A-Za-z0-9-]+)/i);
+      if (licenseMatch) result.extractedLicenseNumber = licenseMatch[1].trim();
+
+      return result;
+    } catch (e) {
+      console.warn("Client-side OCR failed:", e);
+      return {};
+    }
+  };
+
   const handleExtractSubmit = async () => {
     if (!pncFile) {
       setError("Pakistan Nursing Council (PNC) License file is strictly mandatory.");
@@ -125,12 +151,31 @@ export default function Hero() {
         throw new Error(result.error);
       }
       
-      if (result.extractedData) {
+      if (result.extractedData && Object.keys(result.extractedData).length > 0) {
         setExtractedData(result.extractedData);
-        // Persist extracted data for survey transition
         sessionStorage.setItem("extractedData", JSON.stringify(result.extractedData));
       } else {
-        throw new Error("No structured data was parsed from the files. Please retry with clearer documents.");
+        // Fallback: try client-side OCR before giving up
+        console.warn("Edge Function returned no data, trying client-side OCR...");
+        const ocrData = await runClientOcr(pncFile);
+        if (ocrData.extractedName || ocrData.extractedLicenseNumber) {
+          const merged = {
+            extractedName: ocrData.extractedName || "",
+            extractedEmail: "",
+            extractedPhone: "",
+            extractedLicenseNumber: ocrData.extractedLicenseNumber || "",
+            extractedAddress: "",
+            extractedLanguages: "",
+            extractedEducation: "",
+            extractedCertifications: "",
+            extractedExperience: "",
+            extractedSkills: "",
+          };
+          setExtractedData(merged);
+          sessionStorage.setItem("extractedData", JSON.stringify(merged));
+        } else {
+          throw new Error("No structured data was parsed from the files. Please retry with clearer documents.");
+        }
       }
     } catch (err: any) {
       console.error(err);
