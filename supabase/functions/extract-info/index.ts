@@ -243,8 +243,81 @@ async function extractDocxText(file: File): Promise<{ text: string; debug: Recor
   }
 }
 
+async function extractPdfText(file: File): Promise<string> {
+  try {
+    const buffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(buffer);
+
+    // Strategy 1: Try pdfjs-dist for proper PDF text extraction
+    try {
+      const pdfjsLib = await import("npm:pdfjs-dist@4.0.379");
+      console.log(`pdfjs-dist imported successfully for ${file.name}`);
+
+      const doc = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+      console.log(`PDF loaded: ${doc.numPages} page(s)`);
+
+      const pages: string[] = [];
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        const text = content.items.map((item: any) => item.str).join(" ");
+        if (text.trim()) pages.push(text);
+      }
+
+      const fullText = pages.join("\n\n");
+      if (fullText.trim().length > 0) {
+        console.log(`pdfjs-dist extracted ${fullText.length} chars from ${file.name}`);
+        return fullText;
+      }
+      console.log("pdfjs-dist returned empty text, trying regex fallback...");
+    } catch (e: any) {
+      console.warn(`pdfjs-dist import/extract failed: ${e?.message || "unknown"}, trying regex fallback...`);
+    }
+
+    // Strategy 2: Regex-based PDF text extraction (zero dependencies)
+    const decoder = new TextDecoder("utf-8");
+    const rawText = decoder.decode(uint8Array);
+
+    const texts: string[] = [];
+
+    // Extract text between parentheses in BT...ET (Begin Text / End Text) blocks
+    const btEtRegex = /BT\s*([\s\S]*?)\s*ET/g;
+    let match;
+    while ((match = btEtRegex.exec(rawText)) !== null) {
+      const block = match[1];
+      const parenRegex = /\(([^)]*)\)/g;
+      let pm;
+      while ((pm = parenRegex.exec(block)) !== null) {
+        texts.push(pm[1]);
+      }
+    }
+
+    if (texts.length > 0) {
+      const result = texts.join(" ");
+      console.log(`Regex BT...ET extraction returned ${result.length} chars from ${file.name}`);
+      return result;
+    }
+
+    // Try extracting plain text from stream/endstream blocks
+    const streamRegex = /stream\s([\s\S]*?)endstream/g;
+    while ((match = streamRegex.exec(rawText)) !== null) {
+      const streamContent = match[1].trim();
+      if (streamContent.length > 50 && !streamContent.includes("\0") && streamContent.length < 50000) {
+        texts.push(streamContent.substring(0, 10000));
+      }
+    }
+
+    const result = texts.join("\n");
+    console.log(`Regex stream extraction returned ${result.length} chars from ${file.name}`);
+    return result;
+  } catch (e: any) {
+    console.warn(`extractPdfText error for ${file.name}: ${e?.toString() || "unknown"}`);
+    return "";
+  }
+}
+
 /**
- * Extract embedded images from a DOCX file (ZIP archive).
+ * Extract embedded images from a DOCX file (embedded archive).
  * DOCX files can contain embedded screenshots in word/media/.
  */
 async function extractDocxImages(
@@ -614,6 +687,14 @@ Deno.serve(async (req: Request) => {
           }
         } catch (e: any) {
           warnings.push(`Could not read ${file.name}: ${e.message}`);
+        }
+      }
+
+      // For PDF — extract text AND still send as inline data for Gemini vision
+      if (file.name.endsWith(".pdf")) {
+        const pdfText = await extractPdfText(file);
+        if (pdfText) {
+          docxTexts.push(`=== ${file.name} ===\n${pdfText}`);
         }
       }
 
