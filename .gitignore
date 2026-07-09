@@ -20,3 +20,4 @@ live-upload-test.yml
 crush.json
 your/
 trace.json
+supabase/.temp/
