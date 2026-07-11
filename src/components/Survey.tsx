@@ -206,7 +206,7 @@ export default function Survey() {
 
   const handleAutoFill = () => {
     setFormData({
-      professionalQualification: pick(["Diploma in General Nursing (GDN)", "Post RN BSN", "Bachelor of Science in Nursing (BSN)", "Master of Science in Nursing (MSN)"]),
+      professionalQualification: pick(["Diploma in General Nursing (GDN)", "Diploma in Midwifery", "Post RN BSN", "Bachelor of Science in Nursing (BSN)", "Master of Science in Nursing (MSN)"]),
       specialization: pickN(["General Nursing","ICU / CCU","Paediatrics","Orthopedics","Cardiac care","Post-surgical","Geriatric Care","Wound Care","Maternity / Midwife","Physiotherapy assist","Dialysis","Radiology","Infection Control"], 1, 5),
       totalYearsExperience: pick(["Less than 1 year","1 - 3 years","3 - 5 years","6 - 10 years","More than 10 years"]),
       homeCareExperience: pick(["None - no prior home care","Less than 1 year","1 - 3 years","3 - 5 years","More than 5 years"]),
@@ -374,6 +374,7 @@ export default function Survey() {
                         <select value={formData.professionalQualification} onChange={(e) => handleFieldChange("professionalQualification", e.target.value)} className="w-full font-sans text-sm border border-gray-200 rounded-xl py-3 px-4 focus:outline-none focus:border-blue-500">
                           <option value="">Select qualification</option>
                           <option>Diploma in General Nursing (GDN)</option>
+                          <option>Diploma in Midwifery</option>
                           <option>Post RN BSN</option>
                           <option>Bachelor of Science in Nursing (BSN)</option>
                           <option>Master of Science in Nursing (MSN)</option>

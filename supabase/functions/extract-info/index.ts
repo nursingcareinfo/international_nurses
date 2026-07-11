@@ -104,7 +104,7 @@ function getMimeType(fileName: string): string {
   return "application/octet-stream";
 }
 
-const GEMINI_INSTRUCTION = `You are a precise data extraction engine for Pakistani nursing CVs and PNC license documents.
+const GEMINI_INSTRUCTION = `You are a precise data extraction engine for Pakistani nursing and midwifery CVs and PNC license documents.
 
 Extract the fields below from the document(s). Return ONLY a single JSON object — no markdown, no code fences, no greeting, no explanation.
 
@@ -120,7 +120,7 @@ Expected output format (use these exact 13 keys, omit any field not found):
   "experience": "Professional experience summary",
   "skills": "Clinical/technical skills (comma-separated, e.g. Patient Assessment, Wound Care, IV Therapy, NICU)",
   "certifications": "Professional certifications (comma-separated, e.g. ACLS, BLS, PALS)",
-  "total_years_experience": "Total years of nursing experience as a number or range (e.g. 5, 8, 10+)",
+  "total_years_experience": "Total years of nursing / midwifery experience as a number or range (e.g. 5, 8, 10+)",
   "last_hospital": "Name of the last or current hospital the nurse works/worked at (e.g. Jinnah Hospital, Karachi)",
   "gender": "Gender of the nurse: Male or Female"
 }
