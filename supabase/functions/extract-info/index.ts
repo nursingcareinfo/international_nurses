@@ -132,7 +132,7 @@ Extraction rules:
 - For PNC license: look for "PNC" followed by digits, or a registration number near "License"/"Licence"/"Reg No". Common formats: A-XXXXX, G-XXXXX, PK-S-XX-A-XXXXX.
 - For education: capture degree names like BSN, Post-RN, Diploma in Midwifery, MSc Nursing, etc.
 - For skills: capture specific clinical skills verbatim.
-- For total_years_experience: extract the total nursing experience as a number or range (e.g. "5", "8", "10+"). Look for phrases like "years of experience", "total experience", "nursing experience".
+- For total_years_experience: extract the total nursing experience as a number or range (e.g. "5", "8", "10+"). Look for phrases like "years of experience", "total experience", "nursing / midwifery experience".
 - For last_hospital: extract the name of the last or current hospital the nurse works/worked at, especially if located in Karachi. Look for "current hospital", "last hospital", "workplace", or hospital names in the CV.
 - For gender: determine if the nurse is Male or Female. Look for honorifics (Mr., Mrs., Ms., Dr.), pronouns, or explicitly stated gender.
 - Scan tables, headers, footers, and all sections of the document(s).
