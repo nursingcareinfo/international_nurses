@@ -81,6 +81,17 @@ function extractViaRegex(text: string): Record<string, string> {
     else data.extractedGender = g.charAt(0).toUpperCase() + g.slice(1).toLowerCase();
   }
 
+  const ageMatch = text.match(/(?:Age|AGE|age)\s*:\s*(\d+)/);
+  if (ageMatch) data.extractedAge = ageMatch[1].trim();
+
+  if (!ageMatch) {
+    const dobMatch = text.match(/(?:DOB|Date of Birth|date of birth|Date Of Birth)\s*:\s*(.+)/);
+    if (dobMatch) data.extractedAge = dobMatch[1].trim();
+  }
+
+  const relMatch = text.match(/(?:Religion|religion|RELIGION)\s*:\s*(.+)/);
+  if (relMatch) data.extractedReligion = relMatch[1].trim();
+
   return data;
 }
 
@@ -108,7 +119,7 @@ const GEMINI_INSTRUCTION = `You are a precise data extraction engine for Pakista
 
 Extract the fields below from the document(s). Return ONLY a single JSON object — no markdown, no code fences, no greeting, no explanation.
 
-Expected output format (use these exact 13 keys, omit any field not found):
+Expected output format (use these exact 15 keys, omit any field not found):
 {
   "name": "Full name of the nurse candidate",
   "email": "Email address",
@@ -122,7 +133,9 @@ Expected output format (use these exact 13 keys, omit any field not found):
   "certifications": "Professional certifications (comma-separated, e.g. ACLS, BLS, PALS)",
   "total_years_experience": "Total years of nursing / midwifery experience as a number or range (e.g. 5, 8, 10+)",
   "last_hospital": "Name of the last or current hospital the nurse works/worked at (e.g. Jinnah Hospital, Karachi)",
-  "gender": "Gender of the nurse: Male or Female"
+  "gender": "Gender of the nurse: Male or Female",
+  "age": "Age of the nurse as a number (e.g. 25, 30, 42)",
+  "religion": "Religion of the nurse (e.g. Islam, Christianity, Hinduism)"
 }
 
 Extraction rules:
@@ -135,6 +148,8 @@ Extraction rules:
 - For total_years_experience: extract the total nursing experience as a number or range (e.g. "5", "8", "10+"). Look for phrases like "years of experience", "total experience", "nursing / midwifery experience".
 - For last_hospital: extract the name of the last or current hospital the nurse works/worked at, especially if located in Karachi. Look for "current hospital", "last hospital", "workplace", or hospital names in the CV.
 - For gender: determine if the nurse is Male or Female. Look for honorifics (Mr., Mrs., Ms., Dr.), pronouns, or explicitly stated gender.
+- For age: extract the age as a number. Look for "Age", "DOB", "Date of Birth", "age", "years old" in the document.
+- For religion: extract the religion if stated (e.g. Islam, Christianity, Hinduism, etc.). Common on Pakistani CVs in a personal details section.
 - Scan tables, headers, footers, and all sections of the document(s).
 - If you receive multiple files (e.g. a CV and a PNC card), merge the data from ALL files into ONE JSON output.
 - Return ONLY valid JSON. No markdown formatting, no code blocks, no extra text.`;
@@ -432,6 +447,8 @@ function parseAnyJsonResponse(text: string): Record<string, string> | null {
     if (parsed.total_years_experience) mapped.extractedTotalYearsExperience = String(parsed.total_years_experience);
     if (parsed.last_hospital) mapped.extractedLastHospital = String(parsed.last_hospital);
     if (parsed.gender) mapped.extractedGender = String(parsed.gender);
+    if (parsed.age) mapped.extractedAge = String(parsed.age);
+    if (parsed.religion) mapped.extractedReligion = String(parsed.religion);
     if (Object.keys(mapped).length > 0) return mapped;
   } catch {}
   return null;

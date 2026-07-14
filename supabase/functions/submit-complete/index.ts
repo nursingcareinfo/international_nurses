@@ -146,6 +146,9 @@ serve(async (req) => {
         `${surveyData?.jobTitle || ""} at ${surveyData?.currentEmployer || ""}`.trim() ||
         null,
       skills: extractedData?.extractedSkills || "Nursing Care",
+      age: extractedData?.extractedAge || null,
+      gender: extractedData?.extractedGender || null,
+      religion: extractedData?.extractedReligion || null,
     };
 
     const { error: profileErr } = await supabase

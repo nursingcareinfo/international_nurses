@@ -246,7 +246,7 @@ export default function Survey() {
       followUpConsent: pick(["Yes — happy to participate","No — survey only"]),
       privacyConsent: true,
     });
-    setTimeout(() => setActiveTab(4), 300);
+    setTimeout(() => setActiveTab(0), 300);
   };
 
   const SECTIONS = [

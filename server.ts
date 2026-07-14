@@ -187,7 +187,9 @@ app.post(
           extractedEducation: "Bachelor of Science in Nursing (BScN) - Dow University",
           extractedCertifications: "BLS (Basic Life Support), ACLS Certified",
           extractedExperience: "3 years as ICU Staff Nurse at Shifa International Hospital",
-          extractedSkills: "Critical Care, Patient Assessment, IV Therapy, Electronic Health Records (EHR)"
+          extractedSkills: "Critical Care, Patient Assessment, IV Therapy, Electronic Health Records (EHR)",
+          extractedAge: "28",
+          extractedReligion: "Islam"
         };
         return res.json({ extractedData: mockData, info: "Extracted via smart simulation (Gemini API key not configured)." });
       }
@@ -206,6 +208,8 @@ Extracted fields guidelines:
 8. extractedCertifications: Professional licenses, BLS, ACLS, IELTS, etc.
 9. extractedExperience: Practical working history (e.g. 2 years at Shaukat Khanum Hospital).
 10. extractedSkills: Practical nursing competencies.
+11. extractedAge: Age of the nurse as a number (e.g. 25, 30, 42). Look for "Age", "DOB", "Date of Birth" in the CV.
+12. extractedReligion: Religion of the nurse (e.g. Islam, Christianity, Hinduism). Common in the personal details section of Pakistani CVs.
 
 CRITICAL INSTRUCTIONS FOR MULTIMODAL EXTRACTION:
 - Scan the uploaded documents carefully. If you receive an image or PDF of a card (such as a Pakistan Nursing Council Registration Card), extract the exact nurse name, license/registration number, and dates from the card text.
@@ -223,7 +227,10 @@ JSON Schema:
   "extractedEducation": "string",
   "extractedCertifications": "string",
   "extractedExperience": "string",
-  "extractedSkills": "string"
+  "extractedSkills": "string",
+  "extractedAge": "string",
+  "extractedReligion": "string",
+  "extractedGender": "string"
 }`;
 
       const contentsList: any[] = [];
@@ -265,7 +272,9 @@ JSON Schema:
         extractedEducation: parsedData.extractedEducation || "",
         extractedCertifications: parsedData.extractedCertifications || "",
         extractedExperience: parsedData.extractedExperience || "",
-        extractedSkills: parsedData.extractedSkills || ""
+        extractedSkills: parsedData.extractedSkills || "",
+        extractedAge: parsedData.extractedAge || "",
+        extractedReligion: parsedData.extractedReligion || ""
       };
 
       return res.json({ extractedData: finalExtracted });
@@ -487,6 +496,9 @@ app.post("/api/submit-complete", async (req, res): Promise<any> => {
             experience: newSub.extractedData?.extractedExperience ||
               `${sd.jobTitle || ""} at ${sd.currentEmployer || ""}`.trim() || null,
             skills: newSub.extractedData?.extractedSkills || "Nursing Care",
+            age: newSub.extractedData?.extractedAge || null,
+            gender: newSub.extractedData?.extractedGender || null,
+            religion: newSub.extractedData?.extractedReligion || null,
           };
 
           const { error: profileErr } = await supabase

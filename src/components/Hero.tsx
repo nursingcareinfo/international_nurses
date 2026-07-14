@@ -27,6 +27,8 @@ interface ExtractedData {
   extractedTotalYearsExperience: string;
   extractedLastHospital: string;
   extractedGender: string;
+  extractedAge: string;
+  extractedReligion: string;
 }
 
 export default function Hero() {
@@ -143,6 +145,16 @@ export default function Hero() {
       const hospitalMatch = text.match(/(?:Hospital|Institute|Clinic)\s*:?\s*([A-Za-z\s.]+(?:Hospital|Institute|Clinic))/i);
       if (hospitalMatch) result.extractedLastHospital = hospitalMatch[1].trim();
 
+      const ageMatch = text.match(/(?:Age|AGE|age)\s*:?\s*(\d+)/);
+      if (ageMatch) result.extractedAge = ageMatch[1].trim();
+      if (!ageMatch) {
+        const dobMatch = text.match(/(?:DOB|Date of Birth|date of birth)\s*:?\s*(.+)/);
+        if (dobMatch) result.extractedAge = dobMatch[1].trim();
+      }
+
+      const relMatch = text.match(/(?:Religion|religion|RELIGION)\s*:?\s*(.+)/i);
+      if (relMatch) result.extractedReligion = relMatch[1].trim();
+
       return result;
     } catch (e) {
       console.warn("Client-side OCR failed:", e);
@@ -193,6 +205,8 @@ export default function Hero() {
             extractedTotalYearsExperience: ocrData.extractedTotalYearsExperience || "",
             extractedLastHospital: ocrData.extractedLastHospital || "",
             extractedGender: ocrData.extractedGender || "",
+            extractedAge: ocrData.extractedAge || "",
+            extractedReligion: ocrData.extractedReligion || "",
           };
           setExtractedData(merged);
           sessionStorage.setItem("extractedData", JSON.stringify(merged));
