@@ -369,12 +369,17 @@ app.post("/api/submit-complete", async (req, res): Promise<any> => {
   try {
     const { fullName, email, phone, licenseNumber, extractedData, surveyData } = req.body;
 
+    const resolvedLicense = (licenseNumber || extractedData?.extractedLicenseNumber || "").trim();
+    if (!resolvedLicense) {
+      return res.status(400).json({ error: "PNC License Number is required. Please upload a clear PNC registration card." });
+    }
+
     const newSub: Application = {
       id: submissionsDb.length + 1,
       fullName: fullName || extractedData?.extractedName || "",
       phone: phone || extractedData?.extractedPhone || "",
       email: email || extractedData?.extractedEmail || "",
-      licenseNumber: licenseNumber || extractedData?.extractedLicenseNumber || "",
+      licenseNumber: resolvedLicense,
       extractedData: extractedData || {},
       surveyData: surveyData || {},
       createdAt: new Date().toISOString()

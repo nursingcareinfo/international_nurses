@@ -16,6 +16,17 @@ serve(async (req) => {
   try {
     const { fullName, email, phone, licenseNumber, extractedData, surveyData } = await req.json();
 
+    const resolvedLicense = (licenseNumber || extractedData?.extractedLicenseNumber || "").trim();
+    if (!resolvedLicense) {
+      return new Response(
+        JSON.stringify({ error: "PNC License Number is required." }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Create Supabase Admin client with service role key
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -33,7 +44,7 @@ serve(async (req) => {
         full_name: fullName || extractedData?.extractedName || "",
         phone: phone || extractedData?.extractedPhone || "",
         email: email || extractedData?.extractedEmail || "",
-        license_number: licenseNumber || extractedData?.extractedLicenseNumber || "",
+        license_number: resolvedLicense,
         ai_extracted_data: extractedData || {},
         survey_link_sent: true,
       })
@@ -113,7 +124,7 @@ serve(async (req) => {
     // 3. Insert into pnc_license_data (normalized PNC card data)
     const pncPayload: Record<string, unknown> = {
       application_id: applicationId,
-      license_number: licenseNumber || extractedData?.extractedLicenseNumber || surveyData?.licenseNumber || "",
+      license_number: resolvedLicense,
       council_name: surveyData?.councilName || "Pakistan Nursing Council",
       category: surveyData?.category || null,
       verification_status: surveyData?.verificationStatus || "Active",
