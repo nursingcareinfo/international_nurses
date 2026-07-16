@@ -184,35 +184,45 @@ export default function Hero() {
       }
       
       if (result.extractedData && Object.keys(result.extractedData).length > 0) {
+        const licenseNum = result.extractedData.extractedLicenseNumber?.trim();
+        if (!licenseNum) {
+          throw new Error(
+            "Could not read a PNC License Number from the uploaded file. " +
+            "Please upload a clear image of your PNC registration card showing the license number."
+          );
+        }
         setExtractedData(result.extractedData);
         sessionStorage.setItem("extractedData", JSON.stringify(result.extractedData));
       } else {
         // Fallback: try client-side OCR before giving up
         console.warn("Edge Function returned no data, trying client-side OCR...");
         const ocrData = await runClientOcr(pncFile);
-        if (ocrData.extractedName || ocrData.extractedLicenseNumber) {
-          const merged = {
-            extractedName: ocrData.extractedName || "",
-            extractedEmail: "",
-            extractedPhone: "",
-            extractedLicenseNumber: ocrData.extractedLicenseNumber || "",
-            extractedAddress: "",
-            extractedLanguages: "",
-            extractedEducation: "",
-            extractedCertifications: "",
-            extractedExperience: "",
-            extractedSkills: "",
-            extractedTotalYearsExperience: ocrData.extractedTotalYearsExperience || "",
-            extractedLastHospital: ocrData.extractedLastHospital || "",
-            extractedGender: ocrData.extractedGender || "",
-            extractedAge: ocrData.extractedAge || "",
-            extractedReligion: ocrData.extractedReligion || "",
-          };
-          setExtractedData(merged);
-          sessionStorage.setItem("extractedData", JSON.stringify(merged));
-        } else {
-          throw new Error("No structured data was parsed from the files. Please retry with clearer documents.");
+        const ocrLicenseNum = (ocrData.extractedLicenseNumber || "").trim();
+        if (!ocrLicenseNum) {
+          throw new Error(
+            "Could not read a PNC License Number from the uploaded file. " +
+            "Please upload a clear image of your PNC registration card showing the license number."
+          );
         }
+        const merged = {
+          extractedName: ocrData.extractedName || "",
+          extractedEmail: "",
+          extractedPhone: "",
+          extractedLicenseNumber: ocrLicenseNum,
+          extractedAddress: "",
+          extractedLanguages: "",
+          extractedEducation: "",
+          extractedCertifications: "",
+          extractedExperience: "",
+          extractedSkills: "",
+          extractedTotalYearsExperience: ocrData.extractedTotalYearsExperience || "",
+          extractedLastHospital: ocrData.extractedLastHospital || "",
+          extractedGender: ocrData.extractedGender || "",
+          extractedAge: ocrData.extractedAge || "",
+          extractedReligion: ocrData.extractedReligion || "",
+        };
+        setExtractedData(merged);
+        sessionStorage.setItem("extractedData", JSON.stringify(merged));
       }
     } catch (err: any) {
       console.error(err);

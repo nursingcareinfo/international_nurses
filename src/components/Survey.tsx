@@ -132,6 +132,12 @@ export default function Survey() {
       return;
     }
 
+    const licenseNum = extractedData?.extractedLicenseNumber?.trim();
+    if (!licenseNum) {
+      setError("Missing PNC License Number. Please go back and upload a clear PNC registration card.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
