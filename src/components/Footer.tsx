@@ -6,7 +6,7 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
           
           {/* Brand Col */}
           <div className="space-y-4">
@@ -70,6 +70,23 @@ export default function Footer() {
               <li className="flex items-center gap-2.5">
                 <Mail className="h-4 w-4 text-blue-500 shrink-0" />
                 <span>careers@globalnurseportal.com</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Karachi Office */}
+          <div className="space-y-4">
+            <h4 className="font-sans font-bold text-sm text-white tracking-wider uppercase">
+              Karachi Office
+            </h4>
+            <ul className="space-y-2.5 font-sans text-sm text-gray-400">
+              <li className="flex items-start gap-2.5">
+                <MapPin className="h-4.5 w-4.5 text-blue-500 shrink-0 mt-0.5" />
+                <span>House# C-4, KDA Scheme# 1, off Karsaz Road, Karachi</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Phone className="h-4 w-4 text-blue-500 shrink-0" />
+                <span>+92 347 8563629</span>
               </li>
             </ul>
           </div>
