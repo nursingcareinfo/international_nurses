@@ -21,3 +21,5 @@ crush.json
 your/
 trace.json
 supabase/.temp/
+whatsapp-sent.csv
+.whatsapp-profile/

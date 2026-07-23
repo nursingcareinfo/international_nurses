@@ -393,7 +393,23 @@ app.post("/api/submit-complete", async (req, res): Promise<any> => {
     if (supabaseUrl && supabaseKey && !supabaseKey.startsWith("sb_publishable_dummy")) {
       try {
         const supabase = createClient(supabaseUrl, supabaseKey);
-        
+
+        // 0. Check for duplicate (license_number or phone)
+        const resolvedPhone = (newSub.phone || "").trim();
+        const { data: existing } = await supabase
+          .from("nursing_applications")
+          .select("id, full_name")
+          .or(`license_number.eq.${resolvedLicense}${resolvedPhone ? `,phone.eq.${resolvedPhone}` : ""}`)
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          return res.status(409).json({
+            error: "You have already applied! Our records show an application was submitted for this PNC License Number or phone number.",
+            duplicate: true,
+            existingId: existing[0].id,
+          });
+        }
+
         // 1. Insert into nursing_applications
         const { data: appData, error: appErr } = await supabase
           .from("nursing_applications")

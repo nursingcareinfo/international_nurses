@@ -46,10 +46,15 @@ export async function callEdgeFunction(name: string, body: any) {
 
       if (response.ok) {
         return await response.json();
-      } else {
-        const errText = await response.text();
-        console.warn(`Supabase Edge Function ${name} returned ${response.status}: ${errText}. Falling back to local Express server.`);
       }
+      // For submit-complete: propagate duplicate/error directly instead of falling back
+      if (name === "submit-complete") {
+        const errJson = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+        throw new Error(errJson.error || `Submission failed (${response.status})`);
+      }
+      // For other endpoints: fall back to local Express
+      const errText = await response.text();
+      console.warn(`Supabase Edge Function ${name} returned ${response.status}: ${errText}. Falling back to local Express server.`);
     } catch (e) {
       console.warn(`Failed calling Supabase Edge Function ${name}, falling back to local Express server:`, e);
     }

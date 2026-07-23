@@ -152,12 +152,24 @@ export default function Survey() {
       };
 
       const result = await callEdgeFunction("submit-complete", payload);
+      // Check for duplicate response (status 409)
+      if (result?.duplicate) {
+        setError(result.error || "You have already applied for this PNC License.");
+        setSubmitting(false);
+        return;
+      }
       setSubmitted(true);
       sessionStorage.removeItem("extractedData");
       track("survey_submit", { survey_id: result?.applicationId });
     } catch (err: any) {
       console.error("Submission failed:", err);
-      setError(err.message || "An error occurred during submission. Please try again.");
+      // Check if it's a duplicate error
+      const msg = err.message || "";
+      if (msg.includes("already applied")) {
+        setError(msg);
+      } else {
+        setError(msg || "An error occurred during submission. Please try again.");
+      }
     } finally {
       setSubmitting(false);
     }

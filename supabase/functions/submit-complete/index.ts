@@ -37,6 +37,30 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // 0. Check for duplicate application (by license_number or phone)
+    const resolvedPhone = (phone || extractedData?.extractedPhone || "").trim();
+    const { data: existingApp, error: dupCheckErr } = await supabase
+      .from("nursing_applications")
+      .select("id, full_name, created_at")
+      .or(`license_number.eq.${resolvedLicense}${resolvedPhone ? `,phone.eq.${resolvedPhone}` : ""}`)
+      .limit(1);
+
+    if (dupCheckErr) {
+      console.warn("Duplicate check query failed (non-fatal):", dupCheckErr.message);
+    } else if (existingApp && existingApp.length > 0) {
+      return new Response(
+        JSON.stringify({
+          error: "You have already applied! Our records show an application was submitted for this PNC License Number or phone number.",
+          duplicate: true,
+          existingId: existingApp[0].id,
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // 1. Insert into nursing_applications
     const { data: appData, error: appErr } = await supabase
       .from("nursing_applications")
