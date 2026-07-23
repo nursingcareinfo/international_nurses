@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CheckCircle, ArrowLeft, ArrowRight, Save, Briefcase, Globe, Heart, HelpCircle, FileCheck, Zap } from "lucide-react";
+import { CheckCircle, ArrowLeft, ArrowRight, Save, Briefcase, Globe, Heart, HelpCircle, FileCheck, Zap, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { callEdgeFunction, supabase } from "../lib/supabase";
 import { track } from "../lib/analytics";
@@ -351,6 +351,12 @@ export default function Survey() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 mt-8">
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl flex items-start gap-3 font-sans text-sm">
+            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0 text-red-500" />
+            <span className="font-medium">{error}</span>
+          </div>
+        )}
         <AnimatePresence mode="wait">
           {!submitted ? (
             <motion.div key="survey-main" initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
