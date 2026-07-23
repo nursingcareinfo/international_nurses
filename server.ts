@@ -277,6 +277,34 @@ JSON Schema:
         extractedReligion: parsedData.extractedReligion || ""
       };
 
+      // Duplicate check: see if this license already exists in Supabase
+      const licNum = (finalExtracted.extractedLicenseNumber || "").trim();
+      if (licNum) {
+        try {
+          const sbUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+          const sbKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+          if (sbUrl && sbKey) {
+            const sb = createClient(sbUrl, sbKey);
+            const { data: existing } = await sb
+              .from("nursing_applications")
+              .select("id, full_name, created_at")
+              .eq("license_number", licNum)
+              .limit(1);
+            if (existing && existing.length > 0) {
+              return res.json({
+                duplicate: true,
+                extractedData: finalExtracted,
+                existingId: existing[0].id,
+                existingName: existing[0].full_name,
+                error: `You have already applied! Our records show an application for "${existing[0].full_name}" (PNC License: ${licNum}) was already submitted. If you need to update your information, please contact support.`,
+              });
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Duplicate check query failed (non-fatal):", dbErr);
+        }
+      }
+
       return res.json({ extractedData: finalExtracted });
 
     } catch (error: any) {

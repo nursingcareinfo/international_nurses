@@ -1,4 +1,5 @@
 import mammoth from "npm:mammoth@1.6.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
@@ -775,6 +776,39 @@ Deno.serve(async (req: Request) => {
     // Report per-file warnings for files that weren't used
     if (Object.keys(extractedData).length === 0 && filesToProcess.length > 0) {
       warnings.push("Could not extract structured data from the uploaded files. Please ensure documents are clear and try again.");
+    }
+
+    // --- DUPLICATE CHECK: see if this license already exists ---
+    const licenseNum = (extractedData.extractedLicenseNumber || "").trim();
+    if (licenseNum) {
+      try {
+        const sbUrl = Deno.env.get("SUPABASE_URL") || Deno.env.get("VITE_SUPABASE_URL");
+        const sbKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEY");
+        if (sbUrl && sbKey) {
+          const sb = createClient(sbUrl, sbKey);
+          const { data: existing } = await sb
+            .from("nursing_applications")
+            .select("id, full_name, created_at")
+            .eq("license_number", licenseNum)
+            .limit(1);
+          if (existing && existing.length > 0) {
+            return new Response(
+              JSON.stringify({
+                duplicate: true,
+                extractedData,
+                existingId: existing[0].id,
+                existingName: existing[0].full_name,
+                error: `You have already applied! Our records show an application for "${existing[0].full_name}" (PNC License: ${licenseNum}) was already submitted. If you need to update your information, please contact support.`,
+                warnings: warnings.length > 0 ? warnings : undefined,
+                _version: "combined-v1",
+              }),
+              { headers: corsHeaders },
+            );
+          }
+        }
+      } catch (dbErr) {
+        console.warn("Duplicate check query failed (non-fatal):", dbErr);
+      }
     }
 
     const fileInfo = filesToProcess.map(f => ({
