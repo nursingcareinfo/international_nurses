@@ -56,6 +56,8 @@ export async function callEdgeFunction(name: string, body: any) {
       const errText = await response.text();
       console.warn(`Supabase Edge Function ${name} returned ${response.status}: ${errText}. Falling back to local Express server.`);
     } catch (e) {
+      // For submit-complete: re-throw the duplicate error instead of falling back to local Express
+      if (name === "submit-complete") throw e;
       console.warn(`Failed calling Supabase Edge Function ${name}, falling back to local Express server:`, e);
     }
   }
