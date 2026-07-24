@@ -200,7 +200,7 @@ Analyze the uploaded nurse credentials (CV and/or PNC License) and extract struc
 Extracted fields guidelines:
 1. extractedName: Full legal name of the candidate nurse.
 2. extractedEmail: Contact email.
-3. extractedPhone: Contact phone number (usually starts with +92 or 03 for Pakistan).
+3. extractedPhone: Contact phone number. Look for labels like "Mobile:", "Cell:", "Phone:", "Contact:", "Tel:", "WhatsApp:" on the CV or PNC card. For Pakistan, it usually starts with +92 or 03. Return ONLY the number in format "+92 XXX XXXXXXX" (with spaces, starting with +92). If no valid phone found, return empty string.
 4. extractedLicenseNumber: PNC Registration / License number (mandatory from the license). For Pakistan Nursing Council (PNC) cards, carefully scan the text on the registration card to extract the alphanumeric registration/license number (e.g. A-XXXXX, G-XXXXX, PM-10-A-12345, PM-09-A-12345 or similar registration ID). This is usually labeled as "Registration No", "Reg No", or printed clearly near the bottom or center of the card.
 5. extractedAddress: Home address or domicile.
 6. extractedLanguages: Comma-separated languages they speak (e.g., Urdu, English).

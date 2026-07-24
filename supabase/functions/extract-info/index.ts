@@ -27,20 +27,45 @@ function extractViaRegex(text: string): Record<string, string> {
   const emailMatch = text.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
   if (emailMatch) data.extractedEmail = emailMatch[1].trim();
 
-  const phoneMatch = text.match(/(?:\+92|0|92)?[\s-]?3\d{2}[\s-]?\d{7}/);
-  if (phoneMatch) {
-    let phone = phoneMatch[0].replace(/\s+/g, "").replace(/-/g, "");
-    if (phone.startsWith("0")) phone = "+92" + phone.substring(1);
-    else if (phone.startsWith("92") && !phone.startsWith("+92")) phone = "+" + phone;
-    else if (!phone.startsWith("+")) phone = "+92" + phone;
-    if (phone.startsWith("+92") && phone.length >= 12) {
-      data.extractedPhone = "+92 " + phone.substring(3, 6) + " " + phone.substring(6);
-    } else {
-      data.extractedPhone = phone;
+  function normalizePhone(raw: string): string | null {
+    let cleaned = raw.replace(/[\s\-\(\)]/g, "");
+    cleaned = cleaned.replace(/^00/, "").replace(/^\+/, "");
+    if (cleaned.startsWith("92")) {
+      cleaned = cleaned.substring(2);
+    } else if (cleaned.startsWith("0")) {
+      cleaned = cleaned.substring(1);
     }
-  } else {
-    const anyPhone = text.match(/(\+\d{1,3}[\s-]?\d{8,12})/);
-    if (anyPhone) data.extractedPhone = anyPhone[1].trim();
+    if (/^3\d{9}$/.test(cleaned)) {
+      return "+92 " + cleaned.substring(0, 3) + " " + cleaned.substring(3);
+    }
+    if (/^\d{10}$/.test(cleaned)) {
+      return "+92" + cleaned;
+    }
+    return null;
+  }
+
+  const labelPhoneRegex = /(?:Mobile|Cell|Phone|Contact|Tel|WhatsApp|Telephone)\s*[:.\-\s]+\s*([+]?(?:92|0)?[\s\-]?\d{3,4}[\s\-]?\d{7})/i;
+  const labelMatch = text.match(labelPhoneRegex);
+  if (labelMatch) {
+    const normalized = normalizePhone(labelMatch[1]);
+    if (normalized) data.extractedPhone = normalized;
+  }
+
+  if (!data.extractedPhone) {
+    const mobileRegex = /(?:^|[\s,:;])([+]?(?:92|0)?[\s\-]?3\d{2}[\s\-]?\d{3}[\s\-]?\d{4})(?=$|[\s,:;.])/g;
+    const matches = [...text.matchAll(mobileRegex)];
+    for (const m of matches) {
+      const normalized = normalizePhone(m[1]);
+      if (normalized) { data.extractedPhone = normalized; break; }
+    }
+  }
+
+  if (!data.extractedPhone) {
+    const anyPhoneMatch = text.match(/(\+92[\s\-]?\d{3,4}[\s\-]?\d{7})/);
+    if (anyPhoneMatch) {
+      const normalized = normalizePhone(anyPhoneMatch[1]);
+      if (normalized) data.extractedPhone = normalized;
+    }
   }
 
   const pncMatch = text.match(/(?:PNC|Pnc|pnc)[:\s-]*(\d{4,10})/);
@@ -123,8 +148,8 @@ Extract the fields below from the document(s). Return ONLY a single JSON object 
 Expected output format (use these exact 15 keys, omit any field not found):
 {
   "name": "Full name of the nurse candidate",
-  "email": "Email address",
-  "phone": "Phone with Pakistan country code +92...",
+  "email": "Email address. Look for labels like Email:, E-mail:, Contact Email: on the CV.",
+  "phone": "Contact phone number. Look for labels like Mobile:, Cell:, Phone:, Contact:, Tel:, WhatsApp: on the CV or PNC card. For Pakistan it usually starts with +92 or 03.",
   "pnc_license_number": "PNC registration/license number",
   "address": "Full residential address",
   "languages": "Languages spoken (comma-separated, e.g. Urdu, English, Punjabi)",
@@ -142,7 +167,7 @@ Expected output format (use these exact 15 keys, omit any field not found):
 Extraction rules:
 - Extract EXACT text from the document — do not paraphrase or summarize.
 - Omit any field completely if not found (do NOT include it with an empty string value).
-- For phone: always convert to international format starting with +92 for Pakistani numbers.
+- For phone: always convert to international format starting with +92 for Pakistani numbers. Look for labels like "Mobile:", "Cell:", "Phone:", "Contact:", "Tel:", "WhatsApp:" on the CV or PNC card. Search ALL sections of the CV — phone numbers are often in the personal details header and also in a contact information section. Return ONLY the number in format "+92 XXX XXXXXXX" (with spaces, starting with +92). If no valid phone found, omit the field.
 - For PNC license: look for "PNC" followed by digits, or a registration number near "License"/"Licence"/"Reg No". Common formats: A-XXXXX, G-XXXXX, PK-S-XX-A-XXXXX.
 - For education: capture degree names like BSN, Post-RN, Diploma in Midwifery, MSc Nursing, etc.
 - For skills: capture specific clinical skills verbatim.
